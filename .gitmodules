@@ -1,0 +1,3 @@
+[submodule "src/lib/zero"]
+	path = src/lib/zero
+	url = https://github.com/Ants-Aare/zero
