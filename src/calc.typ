@@ -74,17 +74,19 @@
 }
 
 #let sub(a, ..terms) = {
-  let datas = normalise-quantities(terms.pos())
+  let datas = normalise-quantities((a,) + terms.pos(), apply-unit: true)
   let unit = datas.first().at("unit", default: none)
   assert(datas.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
 
   let result = calc-impl.add(
-    normalise-quantities((a,))
-      + datas.map(x => {
-        x.float = -x.float
-        x.info.sign = if x.float >= 0 { "+" } else { "-" }
-        x
-      }),
+    (datas.first(),)
+      + datas
+        .slice(1)
+        .map(x => {
+          if x.at("float", default: none) != none { x.float = -x.float }
+          x.info.sign = if x.info.sign == "-" { "+" } else { "-" }
+          x
+        }),
     unit,
   )
   let args = arguments(..(terms.named() + datas.first().args.named()))
