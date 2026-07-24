@@ -15,6 +15,11 @@
 #import "lib/zero/src/zero.typ": *
 #import "operations.typ" as calc-impl
 
+#let pi = calc.pi
+#let e = calc.e
+#let tau = calc.tau
+#let inf = calc.inf
+
 #let num-metadata(info, raw, args) = (
   float: if type(raw) != float and type(raw) != int { impl.utility.info-to-float(info) } else { raw },
   uncertainty: impl.utility.info-to-uncertainty(info),
