@@ -1,1 +1,2 @@
-#import "calc.typ"
+#import "zcalc.typ"
+#import "impl.typ"
