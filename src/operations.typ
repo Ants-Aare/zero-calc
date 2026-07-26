@@ -1,7 +1,7 @@
 // operations.typ
 #import "lib/zero/src/zero.typ": *
 #import "units.typ": *
-#import "utils.typ": as-float, as-uncertainty, get-places
+#import "utility.typ": as-float, as-uncertainty, get-auto-e, get-highest-e, get-lowest-e, get-places, get-sig-figs
 
 #let rss(terms) = {
   terms = terms.filter(x => x != none)
@@ -32,28 +32,31 @@
   assert(terms.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
   let sum = terms.map(as-float).sum()
   let error = rss(terms.map(as-uncertainty))
-  let target-e = calc.max(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
+  let target-e = get-highest-e(terms)
   return (
     float: sum,
     uncertainty: error,
     info: create-info(sum, error, target-e),
-    round: get-places(terms.map(x => (x.info, x.at("round", default: none))), target-e),
+    round: get-places(
+      terms.map(x => (x.info, x.args.named().at("round", default: x.at("round", default: none)))),
+      target-e,
+    ),
     unit: unit,
     source: (op: "add", data: terms),
   )
 }
 
 #let sub(a, terms) = {
-  terms
-    .slice(1)
-    .map(x => {
-      if x.at("float", default: none) != none { x.float = -x.float }
-      x.info.sign = if x.info.sign == "-" { "+" } else { "-" }
-      x
-    })
-
-  term.info.sign = if term.info.sign == "-" { "+" } else { "-" }
-  return add((datas.first(),) + terms)
+  let unit = a.at("unit", default: none)
+  assert(terms.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
+  let negative-terms = terms.map(x => {
+    if x.at("float", default: none) != none { x.float = -x.float }
+    x.info.sign = if x.info.sign == "-" { "+" } else { "-" }
+    x
+  })
+  let result = add((a,) + negative-terms)
+  result.source = (op: "sub", data: (a, terms))
+  return result
 }
 
 //negates a term
@@ -63,7 +66,7 @@
     float: -as-float(term),
     uncertainty: as-uncertainty(term),
     info: term.info,
-    round: term.at("round", default: none),
+    round: x.args.named().at("round", default: x.at("round", default: none)),
     unit: term.unit,
     source: (op: "neg", data: term),
   )
@@ -85,112 +88,55 @@
 
 #let mul(terms) = {
   let unit = multiply-unit(terms.map(x => x.at("unit", default: none)))
-
-  let product = terms.map(as-float).fold(1.0, (acc, x) => acc * x)
-  let relative-error-terms = terms.map(x => {
-    let uncertainty = as-uncertainty(x)
-    let float = as-float(x)
-    if uncertainty != none and float != 0 {
-      uncertainty / float
-    }
-  })
-  let error = if relative-error-terms.any(x => x != none) {
-    calc.abs(product) * rss(relative-error-terms)
-  }
-  let e = if product != 0 { calc.floor(calc.log(calc.abs(product), base: 10)) } else { 0 }
-  // let sum = terms.map(as-float).sum()
-  // let error = rss(terms.map(as-uncertainty))
-
-  let (integer, fractional) = impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(product)))
-  // (integer, fractional) = impl.utility.shift-decimal-left(integer, fractional, digits: max-exponent)
-  // fractional = fractional.slice(0, count: sig-figs)
-
-  let plus-minus = if error != none {
-    let error-sig-figs = get-error-sig-figs(terms, e)
-    let (pm-integer, pm-fractional) = impl.parsing.decompose-unsigned-float-numeral(str(error))
-    (pm-integer, pm-fractional) = ("000000000" + pm-integer, pm-fractional + "000000000")
-    (pm-integer, pm-fractional) = impl.utility.shift-decimal-left(pm-integer, pm-fractional, digits: 2)
-    (pm-integer, pm-fractional.slice(0, count: error-sig-figs))
-  }
-
-  let (sig-figs, error-sig-figs) = if error != none and error != 0 {
-    let error-sig-figs = calc.max(1, get-error-sig-figs-mult(terms))
-    let error-places = calc.floor(calc.log(calc.abs(error), base: 10))
-    let decimal-place = error-places - error-sig-figs + 1
-    let product-places = calc.floor(calc.log(calc.abs(product), base: 10))
-    (calc.max(1, product-places - decimal-place + 1), error-sig-figs)
-  } else {
-    (calc.max(1, get-sig-figs-mult(terms)), none)
-  }
-
-  let (sign, integer, fractional, e) = round-to-sig-figs(product, sig-figs)
-
-  return (
-    product,
-    error,
+  let product = terms.map(as-float).product(default: 0)
+  let error = if terms.any(x => x.uncertainty != none) {
     (
-      int: integer,
-      frac: fractional,
-      sign: if product >= 0 { "+" } else { "-" },
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "mul", data: terms),
+      calc.abs(product)
+        * rss(terms.map(x => {
+          let uncertainty = as-uncertainty(x)
+          if uncertainty != none {
+            uncertainty / as-float(x)
+          }
+        }))
+    )
+  }
+  let target-e = get-auto-e(product)
+  return (
+    float: product,
+    uncertainty: error,
+    info: create-info(product, error, target-e),
+    round: get-sig-figs(terms.map(x => (x.info, x.args.named().at("round", default: x.at("round", default: none))))),
+    unit: unit,
+    source: (op: "mul", data: terms),
   )
 }
 
-// #let div(dividend, divisor) = {
-//   assert(divisor.float != 0, message: "Cannot divide by zero.")
-//   let unit = multiply-unit((dividend.at("unit", default: none), invert-unit(divisor.at("unit", default: none))))
-//   let datas = (dividend, divisor)
-//   let quotient = dividend.float / divisor.float
+#let div(dividend, divisor) = {
+  let unit = multiply-unit((dividend.at("unit", default: none), invert-unit(divisor.at("unit", default: none))))
+  let terms = (dividend, divisor)
+  let quotient = dividend.float / divisor.float
 
-//   let relative-error-terms = datas.map(x => {
-//     if x.uncertainty != none and x.float != 0 {
-//       x.uncertainty / x.float
-//     }
-//   })
-//   let error = if relative-error-terms.any(x => x != none) {
-//     calc.abs(quotient) * rss(relative-error-terms)
-//   }
-
-//   let (sig-figs, error-sig-figs) = if error != none {
-//     let error-sig-figs = calc.max(1, get-error-sig-figs-mult(datas))
-//     let error-places = calc.floor(calc.log(calc.abs(error), base: 10))
-//     let decimal-place = error-places - error-sig-figs + 1
-//     let quotient-places = calc.floor(calc.log(calc.abs(quotient), base: 10))
-//     (calc.max(1, quotient-places - decimal-place + 1), error-sig-figs)
-//   } else {
-//     (calc.max(1, get-sig-figs-mult((a, b))), none)
-//   }
-
-//   let (sign, integer, fractional, e) = round-to-sig-figs(quotient, sig-figs)
-
-//   let plus-minus
-//   if error != none {
-//     let rounded-error = round-to-sig-figs(error, error-sig-figs)
-//     plus-minus = impl.utility.shift-decimal-left(
-//       rounded-error.integer,
-//       rounded-error.fractional,
-//       digits: (if rounded-error.e != none { int(rounded-error.e) } else { 0 }) - (if e != none { int(e) } else { 0 }),
-//     )
-//   }
-
-//   return (
-//     quotient,
-//     error,
-//     (
-//       int: integer,
-//       frac: fractional,
-//       sign: sign,
-//       pm: plus-minus,
-//       e: e,
-//     ),
-//     unit,
-//     (op: "div", data: datas),
-//   )
-// }
+  let error = if terms.any(x => x.uncertainty != none) {
+    (
+      calc.abs(quotient)
+        * rss(terms.map(x => {
+          let uncertainty = as-uncertainty(x)
+          if uncertainty != none {
+            uncertainty / as-float(x)
+          }
+        }))
+    )
+  }
+  let target-e = get-auto-e(quotient)
+  return (
+    float: quotient,
+    uncertainty: error,
+    info: create-info(quotient, error, target-e),
+    round: get-sig-figs(terms.map(x => (x.info, x.args.named().at("round", default: x.at("round", default: none))))),
+    unit: unit,
+    source: (op: "div", data: terms),
+  )
+}
 
 // #let pow(base, exponent) = {
 //   assert(

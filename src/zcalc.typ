@@ -93,8 +93,8 @@
 #let mul(..terms) = {
   let datas = normalise-quantities(terms.pos())
   let result = calc-impl.mul(datas)
-  let args = arguments(..(terms.named() + datas.first().args.named()))
-  return display(..result, args)
+  result += (args: arguments(..(terms.named() + datas.first().args.named())))
+  return display(result)
 }
 
 #let div(dividend, divisor, ..args) = {
