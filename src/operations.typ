@@ -1,115 +1,71 @@
-// calc-impl.typ
+// operations.typ
 #import "lib/zero/src/zero.typ": *
 #import "units.typ": *
+#import "utils.typ": as-float, as-uncertainty, get-places
 
 #let rss(terms) = {
   terms = terms.filter(x => x != none)
-  if terms == () {
-    return none
-  }
-  return calc.sqrt(terms.map(t => t * t).sum())
+  if terms != () { calc.sqrt(terms.map(t => t * t).sum()) }
 }
 
-#let count-sig-figs(int, frac) = {
-  // a = integer-part digits, b = fractional-part digits (may be "")
-  let digits = int + frac
-  let start = 0
-  while start < digits.len() - 1 and digits.at(start) == "0" {
-    start += 1
-  }
-  digits = digits.slice(start)
-  if frac == "" {
-    while digits.len() > 1 and digits.ends-with("0") {
-      digits = digits.slice(0, digits.len() - 1)
-    }
-  }
-  return digits.len()
+#let create-info(value, uncertainty, e) = {
+  let (integer, fractional) = impl.utility.shift-decimal-left(
+    ..impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(value))),
+    digits: e,
+  )
+  return (
+    int: integer,
+    frac: fractional,
+    sign: if value >= 0 { "+" } else { "-" },
+    pm: if uncertainty != none {
+      impl.utility.shift-decimal-left(
+        ..impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(uncertainty))),
+        digits: e,
+      )
+    },
+    e: if e != 0 { str(e).replace("−", "-") },
+  )
 }
 
-// whichever has the lowest amount of significant figures after the comma wins
-#let get-error-sig-figs(datas, max-e) = calc.min(int.max, ..datas.map(x => {
-  if x.info.pm != none {
-    let e = int(if x.info.e == none { 0 } else { x.info.e })
-    let pm = impl.utility.shift-decimal-left(x.info.pm.at(0), x.info.pm.at(1), digits: -(e - max-e))
-    pm.at(1).len()
-  } else { int.max }
-}))
-
-#let get-error-sig-figs-mult(datas) = calc.min(int.max, ..datas.map(x => {
-  if x.info.pm != none {
-    count-sig-figs(x.info.pm.at(0), x.info.pm.at(1))
-  } else { int.max }
-}))
-
-#let get-sig-figs(datas, max-e) = calc.max(0, ..datas.map(x => {
-  let e = int(if x.info.e == none { 0 } else { x.info.e })
-  let pm = impl.utility.shift-decimal-left(x.info.int, x.info.frac, digits: -(e - max-e))
-  for x in range(pm.at(1).len()).rev() {
-    let f = pm.at(1).at(x)
-    if (f != "0") {
-      return (x + 1)
-    }
-  }
-  return 0
-}))
-
-#let get-sig-figs-mult(datas) = calc.min(..datas.map(x => count-sig-figs(x.info.int, x.info.frac)))
-
-#let round-to-sig-figs(value, sig-figs) = {
-  if value == 0 {
-    return (sign: "+", integer: "0", fractional: "", e: none)
-  }
-  let sign = if value < 0 { "-" } else { "+" }
-  let absval = calc.abs(value)
-  let p = calc.floor(calc.log(absval, base: 10))
-
-  if p + 1 <= sig-figs {
-    let decimalPlaces = sig-figs - 1 - p
-    let (sign, integer, fractional) = impl.parsing.decompose-signed-float-numeral(str(absval))
-    (integer, fractional) = impl.utility.shift-decimal-left(integer, fractional, digits: 0)
-    fractional = ("000000000" + fractional).slice(0, count: -decimalPlaces + fractional.len() + 9).slice(-1)
-    fractional += "000000000"
-    fractional = fractional.slice(0, count: decimalPlaces)
-    return (sign: sign, integer: integer, fractional: fractional, e: none)
-  } else {
-    let e-out = p - sig-figs + 1
-    let mantissa = calc.floor(absval / calc.pow(10.0, e-out))
-    return (sign: sign, integer: str(int(mantissa)), fractional: "", e: str(e-out))
-  }
-}
-
-
-#let add(terms, unit) = {
-  let max-exponent = calc.max(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
-  let sig-figs = get-sig-figs(terms, max-exponent)
-
+#let add(terms) = {
+  let unit = terms.first().at("unit", default: none)
+  assert(terms.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
   let sum = terms.map(as-float).sum()
   let error = rss(terms.map(as-uncertainty))
-
-  let (integer, fractional) = impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(sum)))
-  (integer, fractional) = impl.utility.shift-decimal-left(integer, fractional, digits: max-exponent)
-  fractional = fractional.slice(0, count: sig-figs)
-
-  let plus-minus = if error != none {
-    let error-sig-figs = get-error-sig-figs(terms, max-exponent)
-    let (pm-integer, pm-fractional) = impl.parsing.decompose-unsigned-float-numeral(str(error))
-    (pm-integer, pm-fractional) = ("000000000" + pm-integer, pm-fractional + "000000000")
-    (pm-integer, pm-fractional) = impl.utility.shift-decimal-left(pm-integer, pm-fractional, digits: max-exponent)
-    (pm-integer, pm-fractional.slice(0, count: error-sig-figs))
-  }
-
+  let target-e = calc.max(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
   return (
-    sum,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: if sum >= 0 { "+" } else { "-" },
-      pm: plus-minus,
-      e: if max-exponent != 0 { str(max-exponent) },
-    ),
-    unit,
-    (op: "add", data: terms),
+    float: sum,
+    uncertainty: error,
+    info: create-info(sum, error, target-e),
+    round: get-places(terms.map(x => (x.info, x.at("round", default: none))), target-e),
+    unit: unit,
+    source: (op: "add", data: terms),
+  )
+}
+
+#let sub(a, terms) = {
+  terms
+    .slice(1)
+    .map(x => {
+      if x.at("float", default: none) != none { x.float = -x.float }
+      x.info.sign = if x.info.sign == "-" { "+" } else { "-" }
+      x
+    })
+
+  term.info.sign = if term.info.sign == "-" { "+" } else { "-" }
+  return add((datas.first(),) + terms)
+}
+
+//negates a term
+#let neg(term) = {
+  term.info.sign = if term.info.sign == "-" { "+" } else { "-" }
+  return (
+    float: -as-float(term),
+    uncertainty: as-uncertainty(term),
+    info: term.info,
+    round: term.at("round", default: none),
+    unit: term.unit,
+    source: (op: "neg", data: term),
   )
 }
 
@@ -184,210 +140,210 @@
   )
 }
 
-#let div(dividend, divisor) = {
-  assert(divisor.float != 0, message: "Cannot divide by zero.")
-  let unit = multiply-unit((dividend.at("unit", default: none), invert-unit(divisor.at("unit", default: none))))
-  let datas = (dividend, divisor)
-  let quotient = dividend.float / divisor.float
+// #let div(dividend, divisor) = {
+//   assert(divisor.float != 0, message: "Cannot divide by zero.")
+//   let unit = multiply-unit((dividend.at("unit", default: none), invert-unit(divisor.at("unit", default: none))))
+//   let datas = (dividend, divisor)
+//   let quotient = dividend.float / divisor.float
 
-  let relative-error-terms = datas.map(x => {
-    if x.uncertainty != none and x.float != 0 {
-      x.uncertainty / x.float
-    }
-  })
-  let error = if relative-error-terms.any(x => x != none) {
-    calc.abs(quotient) * rss(relative-error-terms)
-  }
+//   let relative-error-terms = datas.map(x => {
+//     if x.uncertainty != none and x.float != 0 {
+//       x.uncertainty / x.float
+//     }
+//   })
+//   let error = if relative-error-terms.any(x => x != none) {
+//     calc.abs(quotient) * rss(relative-error-terms)
+//   }
 
-  let (sig-figs, error-sig-figs) = if error != none {
-    let error-sig-figs = calc.max(1, get-error-sig-figs-mult(datas))
-    let error-places = calc.floor(calc.log(calc.abs(error), base: 10))
-    let decimal-place = error-places - error-sig-figs + 1
-    let quotient-places = calc.floor(calc.log(calc.abs(quotient), base: 10))
-    (calc.max(1, quotient-places - decimal-place + 1), error-sig-figs)
-  } else {
-    (calc.max(1, get-sig-figs-mult((a, b))), none)
-  }
+//   let (sig-figs, error-sig-figs) = if error != none {
+//     let error-sig-figs = calc.max(1, get-error-sig-figs-mult(datas))
+//     let error-places = calc.floor(calc.log(calc.abs(error), base: 10))
+//     let decimal-place = error-places - error-sig-figs + 1
+//     let quotient-places = calc.floor(calc.log(calc.abs(quotient), base: 10))
+//     (calc.max(1, quotient-places - decimal-place + 1), error-sig-figs)
+//   } else {
+//     (calc.max(1, get-sig-figs-mult((a, b))), none)
+//   }
 
-  let (sign, integer, fractional, e) = round-to-sig-figs(quotient, sig-figs)
+//   let (sign, integer, fractional, e) = round-to-sig-figs(quotient, sig-figs)
 
-  let plus-minus
-  if error != none {
-    let rounded-error = round-to-sig-figs(error, error-sig-figs)
-    plus-minus = impl.utility.shift-decimal-left(
-      rounded-error.integer,
-      rounded-error.fractional,
-      digits: (if rounded-error.e != none { int(rounded-error.e) } else { 0 }) - (if e != none { int(e) } else { 0 }),
-    )
-  }
+//   let plus-minus
+//   if error != none {
+//     let rounded-error = round-to-sig-figs(error, error-sig-figs)
+//     plus-minus = impl.utility.shift-decimal-left(
+//       rounded-error.integer,
+//       rounded-error.fractional,
+//       digits: (if rounded-error.e != none { int(rounded-error.e) } else { 0 }) - (if e != none { int(e) } else { 0 }),
+//     )
+//   }
 
-  return (
-    quotient,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: sign,
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "div", data: datas),
-  )
-}
+//   return (
+//     quotient,
+//     error,
+//     (
+//       int: integer,
+//       frac: fractional,
+//       sign: sign,
+//       pm: plus-minus,
+//       e: e,
+//     ),
+//     unit,
+//     (op: "div", data: datas),
+//   )
+// }
 
-#let pow(base, exponent) = {
-  assert(
-    exponent.at("unit", default: none) == none or exp.unit == (),
-    message: "Exponent must be a plain number, not a quantity.",
-  )
-  if base.at("unit", default: none) != none {
-    assert(exponent.uncertainty == none or exponent.uncertainty == 0, message: "Cannot raise a unit to an uncertain power.")
-    assert(calc.fract(exponent.float) == 0, message: "Cannot raise a unit to a non-integer power.")
-  }
-  if exponent.uncertainty != none {
-    assert(base.float > 0, message: "Uncertain exponent requires a positive base (derivative undefined otherwise).")
-  }
+// #let pow(base, exponent) = {
+//   assert(
+//     exponent.at("unit", default: none) == none or exp.unit == (),
+//     message: "Exponent must be a plain number, not a quantity.",
+//   )
+//   if base.at("unit", default: none) != none {
+//     assert(exponent.uncertainty == none or exponent.uncertainty == 0, message: "Cannot raise a unit to an uncertain power.")
+//     assert(calc.fract(exponent.float) == 0, message: "Cannot raise a unit to a non-integer power.")
+//   }
+//   if exponent.uncertainty != none {
+//     assert(base.float > 0, message: "Uncertain exponent requires a positive base (derivative undefined otherwise).")
+//   }
 
-  let unit = pow-unit(base.at("unit", default: none), exponent.float)
-  let result = calc.pow(base.float, exponent.float)
+//   let unit = pow-unit(base.at("unit", default: none), exponent.float)
+//   let result = calc.pow(base.float, exponent.float)
 
-  let error-terms = (
-    if base.uncertainty != none and base.float != 0 {
-      exponent.float * calc.abs(result) * (base.uncertainty / calc.abs(base.float))
-    },
-    if exp.uncertainty != none {
-      calc.abs(result) * calc.abs(calc.ln(base.float)) * exponent.uncertainty
-    },
-  )
-  let error = if error-terms.any(x => x != none) { rss(error-terms) }
+//   let error-terms = (
+//     if base.uncertainty != none and base.float != 0 {
+//       exponent.float * calc.abs(result) * (base.uncertainty / calc.abs(base.float))
+//     },
+//     if exp.uncertainty != none {
+//       calc.abs(result) * calc.abs(calc.ln(base.float)) * exponent.uncertainty
+//     },
+//   )
+//   let error = if error-terms.any(x => x != none) { rss(error-terms) }
 
-  let (sig-figs, error-sig-figs) = if error != none {
-    let error-sig-figs = calc.max(1, get-error-sig-figs-mult((base, exponent)))
-    let error-places = calc.floor(calc.log(calc.abs(error), base: 10))
-    let decimal-place = error-places - error-sig-figs + 1
-    let result-places = calc.floor(calc.log(calc.abs(result), base: 10))
-    (calc.max(1, result-places - decimal-place + 1), error-sig-figs)
-  } else {
-    (calc.max(1, get-sig-figs-mult((base, exponent))), none)
-  }
+//   let (sig-figs, error-sig-figs) = if error != none {
+//     let error-sig-figs = calc.max(1, get-error-sig-figs-mult((base, exponent)))
+//     let error-places = calc.floor(calc.log(calc.abs(error), base: 10))
+//     let decimal-place = error-places - error-sig-figs + 1
+//     let result-places = calc.floor(calc.log(calc.abs(result), base: 10))
+//     (calc.max(1, result-places - decimal-place + 1), error-sig-figs)
+//   } else {
+//     (calc.max(1, get-sig-figs-mult((base, exponent))), none)
+//   }
 
-  let (sign, integer, fractional, e) = round-to-sig-figs(result, sig-figs)
+//   let (sign, integer, fractional, e) = round-to-sig-figs(result, sig-figs)
 
-  let plus-minus
-  if error != none {
-    let rounded-error = round-to-sig-figs(error, error-sig-figs)
-    plus-minus = impl.utility.shift-decimal-left(
-      rounded-error.integer,
-      rounded-error.fractional,
-      digits: (if rounded-error.e != none { int(rounded-error.e) } else { 0 }) - (if e != none { int(e) } else { 0 }),
-    )
-  }
+//   let plus-minus
+//   if error != none {
+//     let rounded-error = round-to-sig-figs(error, error-sig-figs)
+//     plus-minus = impl.utility.shift-decimal-left(
+//       rounded-error.integer,
+//       rounded-error.fractional,
+//       digits: (if rounded-error.e != none { int(rounded-error.e) } else { 0 }) - (if e != none { int(e) } else { 0 }),
+//     )
+//   }
 
-  return (
-    result,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: sign,
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "div", data: (base, exp)),
-  )
-}
-#let exp(exponent) = pow((float:calc.e, info:(...)), exponent)
+//   return (
+//     result,
+//     error,
+//     (
+//       int: integer,
+//       frac: fractional,
+//       sign: sign,
+//       pm: plus-minus,
+//       e: e,
+//     ),
+//     unit,
+//     (op: "div", data: (base, exp)),
+//   )
+// }
+// #let exp(exponent) = pow((float:calc.e, info:(...)), exponent)
 
-#let root(radicand, index) = {
-  let result = calc.root(as-float(radicand), as-float(index))
-  let error = 
+// #let root(radicand, index) = {
+//   let result = calc.root(as-float(radicand), as-float(index))
+//   let error =
 
-  return (
-    result,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: sign,
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "root", data: (base, exp)),
-  )
-}
+//   return (
+//     result,
+//     error,
+//     (
+//       int: integer,
+//       frac: fractional,
+//       sign: sign,
+//       pm: plus-minus,
+//       e: e,
+//     ),
+//     unit,
+//     (op: "root", data: (base, exp)),
+//   )
+// }
 
-#let sqrt(radicand) = root(radicand, (float:2, ...))
+// #let sqrt(radicand) = root(radicand, (float:2, ...))
 
-#let log(value, base) = {
-  let result = calc.root(as-float(radicand), as-float(index))
-  let error = 
+// #let log(value, base) = {
+//   let result = calc.root(as-float(radicand), as-float(index))
+//   let error =
 
-  return (
-    result,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: sign,
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "log", data: (base, exp)),
-  )
-}
+//   return (
+//     result,
+//     error,
+//     (
+//       int: integer,
+//       frac: fractional,
+//       sign: sign,
+//       pm: plus-minus,
+//       e: e,
+//     ),
+//     unit,
+//     (op: "log", data: (base, exp)),
+//   )
+// }
 
-#let ln(value) = log(value, (float:calc.e, info:(...)))
+// #let ln(value) = log(value, (float:calc.e, info:(...)))
 
-#let sin(angle) = {
-  result = calc.sin(as-float(angle))
-  return (
-    result,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: sign,
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "sin", data: (angle,)),
-  )
-}
-#let cos(angle) = {
-  result = calc.cos(as-float(angle))
-  return (
-    result,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: sign,
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "cos", data: (angle,)),
-  )
-}
+// #let sin(angle) = {
+//   result = calc.sin(as-float(angle))
+//   return (
+//     result,
+//     error,
+//     (
+//       int: integer,
+//       frac: fractional,
+//       sign: sign,
+//       pm: plus-minus,
+//       e: e,
+//     ),
+//     unit,
+//     (op: "sin", data: (angle,)),
+//   )
+// }
+// #let cos(angle) = {
+//   result = calc.cos(as-float(angle))
+//   return (
+//     result,
+//     error,
+//     (
+//       int: integer,
+//       frac: fractional,
+//       sign: sign,
+//       pm: plus-minus,
+//       e: e,
+//     ),
+//     unit,
+//     (op: "cos", data: (angle,)),
+//   )
+// }
 
-#let tan(angle) = {
-  result = calc.tan(as-float(angle))
-  return (
-    result,
-    error,
-    (
-      int: integer,
-      frac: fractional,
-      sign: sign,
-      pm: plus-minus,
-      e: e,
-    ),
-    unit,
-    (op: "tan", data: (angle,)),
-  )
-}
+// #let tan(angle) = {
+//   result = calc.tan(as-float(angle))
+//   return (
+//     result,
+//     error,
+//     (
+//       int: integer,
+//       frac: fractional,
+//       sign: sign,
+//       pm: plus-minus,
+//       e: e,
+//     ),
+//     unit,
+//     (op: "tan", data: (angle,)),
+//   )
+// }
