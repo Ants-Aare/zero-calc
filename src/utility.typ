@@ -48,7 +48,7 @@
     let (info, round) = x
     let e = if info.e == none { 0 } else { int(info.e) }
     let value-frac = info.frac.len()
-    let uncertainty = if info.pm != none { (target-e - e) + info.pm.at(1).len() } else { 1000 }
+    let uncertainty = if info.pm != none { info.pm.at(1).len() } else { 1000 }
     if round != none {
       value-frac = round.at("precision", default: value-frac)
       uncertainty = round.at("uncertainty-precision", default: uncertainty)
@@ -104,14 +104,15 @@
 #let get-e(terms, value, mode) = {
   impl.rounding.assert-option(mode, "e mode", ("highest", "lowest", "value"))
   let e = if mode == "value" {
-    get-value-e(value)
+    let e = get-value-e(value)
+    if e == 1 {
+      e = 0
+    }
+    e
   } else if mode == "highest" {
     get-highest-e(terms)
   } else if mode == "highest" {
     get-lowest-e(terms)
-  }
-  if e == 1 {
-    e = 0
   }
   return e
 }
