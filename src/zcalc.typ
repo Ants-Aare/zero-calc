@@ -100,8 +100,8 @@
 #let div(dividend, divisor, ..args) = {
   let (dividend, divisor) = normalise-quantities((dividend, divisor))
   let result = calc-impl.div(dividend, divisor)
-  let args = arguments(..(args.named() + dividend.args.named()))
-  return display(..result, args)
+  result += (args: arguments(..(terms.named() + datas.first().args.named())))
+  return display(result)
 }
 
 #let pow(base, exp, ..args) = {

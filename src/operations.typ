@@ -1,7 +1,7 @@
 // operations.typ
 #import "lib/zero/src/zero.typ": *
 #import "units.typ": *
-#import "utility.typ": as-float, as-uncertainty, get-auto-e, get-highest-e, get-lowest-e, get-places, get-sig-figs
+#import "utility.typ": as-float, as-uncertainty, get-e, get-places, get-sig-figs
 
 #let rss(terms) = {
   terms = terms.filter(x => x != none)
@@ -32,7 +32,7 @@
   assert(terms.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
   let sum = terms.map(as-float).sum()
   let error = rss(terms.map(as-uncertainty))
-  let target-e = get-highest-e(terms)
+  let target-e = get-e(terms, sum, "highest")
   return (
     float: sum,
     uncertainty: error,
@@ -100,7 +100,7 @@
         }))
     )
   }
-  let target-e = get-auto-e(product)
+  let target-e = get-e(terms, product, "value")
   return (
     float: product,
     uncertainty: error,
@@ -127,7 +127,7 @@
         }))
     )
   }
-  let target-e = get-auto-e(quotient)
+  let target-e = get-value-e(quotient)
   return (
     float: quotient,
     uncertainty: error,

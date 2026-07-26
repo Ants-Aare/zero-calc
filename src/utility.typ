@@ -48,7 +48,7 @@
     let (info, round) = x
     let e = if info.e == none { 0 } else { int(info.e) }
     let value-frac = info.frac.len()
-    let uncertainty = if info.pm != none { (target-e - e) + info.pm.at(1).len() } else { int.max }
+    let uncertainty = if info.pm != none { (target-e - e) + info.pm.at(1).len() } else { 1000 }
     if round != none {
       value-frac = round.at("precision", default: value-frac)
       uncertainty = round.at("uncertainty-precision", default: uncertainty)
@@ -68,7 +68,7 @@
     precision: value-places,
     mode: "places",
   )
-  if uncertainty-places != int.max {
+  if uncertainty-places < 900 {
     round += (uncertainty-precision: uncertainty-places)
   }
   return round
@@ -95,4 +95,23 @@
     round += (uncertainty-precision: uncertainty-sig-figs)
   }
   return round
+}
+
+#let get-highest-e(terms) = calc.max(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
+#let get-lowest-e(terms) = calc.min(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
+#let get-value-e(value) = if value != 0 { calc.floor(calc.log(calc.abs(value), base: 10)) } else { 0 }
+
+#let get-e(terms, value, mode) = {
+  impl.rounding.assert-option(mode, "e mode", ("highest", "lowest", "value"))
+  let e = if mode == "value" {
+    get-value-e(value)
+  } else if mode == "highest" {
+    get-highest-e(terms)
+  } else if mode == "highest" {
+    get-lowest-e(terms)
+  }
+  if e == 1 {
+    e = 0
+  }
+  return e
 }

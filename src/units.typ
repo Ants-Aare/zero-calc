@@ -6,10 +6,12 @@
   ).join(default: ())
 }
 
-#let signed-pairs-to-unit(pairs) = (
-  numerator: pairs.filter(x => x > 0).map(x => str(x)).pairs(),
-  denominator: pairs.filter(x => x < 0).map(x => str(-x)).pairs(),
-)
+#let signed-pairs-to-unit(pairs) = if pairs == (:) { none } else {
+  (
+    numerator: pairs.filter(x => x > 0).map(x => str(x)).pairs(),
+    denominator: pairs.filter(x => x < 0).map(x => str(-x)).pairs(),
+  )
+}
 
 #let multiply-unit(units) = {
   units = units-to-signed-pairs(units)
