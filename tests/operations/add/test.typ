@@ -3,23 +3,41 @@
 #set page(width: auto, height: auto, margin: .5em)
 #let m = zi.meter.with(exponent: "eng")
 
-#calc.add(2, 1)
-#calc.add(2, [3+-1])
-#calc.add([1+-0.4], [1+-0.3])\
-#calc.add(..range(5).map(x => str(x) + "+-1"))
-#calc.add(1000, "1e2")\
-#calc.add(1, "1e3")
-#calc.add(m(1), 1)\
-#calc.add(m("22+-0.1"), m("12e3"))\
-#let x = m("23+-3e2")
-#let y = m("10+-0.4e3")
-#calc.add(x, y)\
-#let z = calc.add([#std.calc.pi+-0.1234], str(std.calc.e) + "+-0.1234")
-#z
-#assert(impl.utility.retrieve-metadata(z).float == std.calc.pi + std.calc.e)
-#assert(impl.utility.retrieve-metadata(z).uncertainty == 0.17451395359683994)\
-#let z = calc.add(z, [1+-0.1])
-#z
-#assert(impl.utility.retrieve-metadata(z).float == std.calc.pi + std.calc.e + 1)
-#assert(impl.utility.retrieve-metadata(z).uncertainty == 0.2011345818102894)\
+#zcalc.add(1, "1e3")\
+#zcalc.add("1e1", "1e2")\
+#zcalc.add(1000, "10e1")\
+#zcalc.add(1001, "10e1")\
+#zcalc.add(1000, "1e2")\
+#zcalc.add(1001, "1e2")\
+#zcalc.add(1, "1e-1")\
+#zcalc.add(1, "1e-2")\
+#zcalc.add("1e-3", "1e-2")\
+#zcalc.add("1.111e3", "1.1e3")\
 
+#pagebreak()
+#zcalc.add(2, 1)
+#zcalc.add(2, [3+-1])
+#zcalc.add([1+-0.4], [1+-0.3])\
+#zcalc.add(..range(5).map(x => str(x) + "+-1.0"))
+#zcalc.add(m(1), 1)\
+#zcalc.add(m("22+-0.1"), m("12e3"))\
+
+#pagebreak()
+#zcalc.add("6e2", "6e2")
+#zcalc.add("6.11+-0.111", "6.22")\
+#zcalc.add("6.11+-0.111e2", "6.22e2")\
+#zcalc.add("6.11+-0.111", "6.22e2")\
+#zcalc.add("6.11+-0.1e3", "622.123")\
+#zcalc.add("6.11+-0.111e2", "6.222222+-0.11e2")\
+#zcalc.add("6.11111e2", "6.2222222222e3")\
+#zcalc.add("6.11111e2", "62.222222222e2")\
+
+#pagebreak()
+#let z = zcalc.add([#zcalc.pi+-0.1234], str(zcalc.e) + "+-0.1234")
+#z\
+#assert(impl.utility.retrieve-metadata(z).float == zcalc.pi + zcalc.e)
+#assert(impl.utility.retrieve-metadata(z).uncertainty == 0.17451395359683994)
+#let z = zcalc.add(z, [1+-0.1])
+#z
+#assert(impl.utility.retrieve-metadata(z).float == zcalc.pi + zcalc.e + 1)
+#assert(impl.utility.retrieve-metadata(z).uncertainty == 0.2011345818102894)
