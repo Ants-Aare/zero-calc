@@ -6,10 +6,17 @@
   ).join(default: ())
 }
 
-#let signed-pairs-to-unit(pairs) = if pairs == (:) { none } else {
+#let dict-to-unit(pairs) = if pairs == (:) { none } else {
   (
     numerator: pairs.filter(x => x > 0).map(x => str(x)).pairs(),
     denominator: pairs.filter(x => x < 0).map(x => str(-x)).pairs(),
+  )
+}
+
+#let signed-pairs-to-unit(pairs) = if pairs == (:) { none } else {
+  (
+    numerator: pairs.filter(x => x.at(1) > 0).map(x => (x.at(0), str(x.at(1)))),
+    denominator: pairs.filter(x => x.at(1) < 0).map(x => (x.at(0), str(-x.at(1)))),
   )
 }
 
@@ -24,7 +31,7 @@
       sum.at(unit) = sum.at(unit) + exponent
     }
   }
-  signed-pairs-to-unit(sum)
+  dict-to-unit(sum)
 }
 
 #let invert-unit(units) = if units != none { (numerator: units.denominator, denominator: units.numerator) }
@@ -37,7 +44,7 @@
 
 #let pow-unit(unit, exponent) = {
   if (unit == none) { return none }
-  let pairs = units-to-signed-pairs((unit,)).map(x => x * exponent)
+  let pairs = units-to-signed-pairs((unit,)) //.map(x => (x.at(0), x.at(1) * exponent))
   signed-pairs-to-unit(pairs)
 }
 

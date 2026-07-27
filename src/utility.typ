@@ -1,6 +1,51 @@
 #import "lib/zero/src/zero.typ": *
 #import impl.utility: *
 
+#let num-metadata(info, raw, args) = (
+  float: if type(raw) != float and type(raw) != int { impl.utility.info-to-float(info) } else { raw },
+  uncertainty: impl.utility.info-to-uncertainty(info),
+  info: info,
+  args: args,
+)
+
+#let normalise-quantity(candidate) = {
+  let metadata = impl.utility.retrieve-metadata(candidate)
+  if metadata != none {
+    return metadata
+  } else {
+    let t = type(candidate)
+    if t == dictionary {
+      return candidate
+    } else if (t == int or t == float or t == str or t == content) {
+      return num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+    }
+  }
+}
+
+#let normalise-quantities(quantities, apply-unit: false) = {
+  let datas = ()
+  let unit
+  for candidate in quantities {
+    let metadata = impl.utility.retrieve-metadata(candidate)
+    if metadata != none {
+      datas.push(metadata)
+      unit = metadata.at("unit", default: none)
+    } else {
+      let t = type(candidate)
+      if t == dictionary {
+        datas.push(candidate)
+      } else if (t == int or t == float or t == str or t == content) {
+        let data = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+        if apply-unit and unit != none {
+          data += (unit: unit)
+        }
+        datas.push(data)
+      }
+    }
+  }
+  return (datas)
+}
+
 #let as-float(value) = {
   if value.at("float", default: none) != none {
     value.float
