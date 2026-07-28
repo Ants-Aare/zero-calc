@@ -53,29 +53,18 @@
   // arctan: (match: $arctan$),
 )
 
-#let apply-operations((head, args, slots)) = {
-  if head == "add" or head == "pos" {
-    operations.add(args)
-  } else if head == "sub" {
-    operations.sub(args.first(), args.slice(1))
-  } else if head == "neg" {
-    operations.neg(args.first())
-  } else if head == "mul" or head == "dot" or head == "times" {
-    operations.mul(args)
-  } else if head == "frac" {
-    operations.div(slots.num, slots.denom)
-  } else if head == "pow" {
-    operations.pow(..args)
-  } else if head == "group" {
-    slots.expr
-  } else if head == "sqrt" {
-    operations.root(slots.radicand, utility.normalise-constant(2))
-  } else if head == "root" {
-    operations.root(slots.radicand, slots.index.value)
-  } else {
-    panic(head)
-  }
-}
+// works well, but since it's a niche use case I'll leave it out
+// #let convert-to-leaves(it) = {
+//   // converts multiplying leaf "delta" with leaf "E" to a single "delta E" leaf
+//   for i in range(it.args.len()).rev() {
+//     let arg = it.args.at(i)
+//     if type(arg) == dictionary and arg.head == "mul" and (arg.args.at(0).at("text", default: none) == "Δ") {
+//       it.args.remove(i)
+//       it.args.push(arg.args.join([ ]))
+//     }
+//   }
+//   it
+// }
 
 #let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
 #let invisible-symbols = regex("[\)]")
@@ -94,7 +83,13 @@
       operations.pi
     }
   } else if variable != none {
-    operations.normalise-quantity(variable)
+    if type(variable) == function {
+      variable-name
+    } else if variable == auto {
+      auto
+    } else {
+      operations.normalise-quantity(variable)
+    }
   }
 
   if (quantity == none) {
@@ -113,24 +108,57 @@
   return quantity
 }
 
-#let convert-to-leaves(it) = {
-  // converts multiplying leaf "delta" with leaf "E" to a single "delta E" leaf
-  for i in range(it.args.len()).rev() {
-    let arg = it.args.at(i)
-    if type(arg) == dictionary and arg.head == "mul" and (arg.args.at(0).at("text", default: none) == "Δ") {
-      it.args.remove(i)
-      it.args.push(arg.args.join([ ]))
+#let apply-operations((head, args, slots), vars) = {
+  if head == "add" or head == "pos" {
+    operations.add(args)
+  } else if head == "sub" {
+    operations.sub(args.first(), args.slice(1))
+  } else if head == "neg" {
+    operations.neg(args.first())
+  } else if head == "mul" or head == "dot" or head == "times" {
+    operations.mul(args)
+  } else if head == "frac" {
+    operations.div(slots.num, slots.denom)
+  } else if head == "abs" {
+    operations.abs(args)
+  } else if head == "pow" {
+    operations.pow(..args)
+  } else if head == "group" {
+    slots.expr
+  } else if head == "root" {
+    operations.root(slots.radicand, slots.index.value)
+  } else if head == "sqrt" {
+    operations.sqrt(slots.radicand)
+  } else if (head == "call") {
+    if type(slots.fn) == str {
+      let func = vars.at(slots.fn)
+      if func != none and type(func) == function {
+        return utility.retrieve-metadata(func(..vars))
+      }
     }
+    slots.fn
+  } else if head == "ln" {
+    operations.ln(..args)
+  } else if head == "log" {
+    operations.log(..args)
+  } else if head == "sin" {
+    operations.sin(args)
+  } else if head == "cos" {
+    operations.cos(args)
+  } else if head == "tan" {
+    operations.tan(args)
+  } else {
+    panic(head)
   }
-  it
 }
+
 #let from-math(equation) = {
   let (tree, rest) = parsely.parse(equation, arithmetic)
 
   (..values) => utility.display(parsely.walk(
     tree,
-    pre: convert-to-leaves,
+    // pre: convert-to-leaves,
     leaf: it => resolve-leaf-node(it, values.named()),
-    post: apply-operations,
+    post: it => apply-operations(it, values.named()),
   ))
 }

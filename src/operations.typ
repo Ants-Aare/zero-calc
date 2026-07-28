@@ -1,6 +1,6 @@
 // operations.typ
-#import "lib/zero/src/zero.typ": *
-#import "units.typ": *
+#import "lib/zero/src/zero.typ"
+#import "units.typ"
 #import "utility.typ": (
   as-float, as-round, as-uncertainty, get-e, get-places, get-sig-figs, normalise-constant, normalise-quantity,
 )
@@ -16,8 +16,8 @@
 }
 
 #let create-info(value, uncertainty, e) = {
-  let (integer, fractional) = impl.utility.shift-decimal-left(
-    ..impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(value))),
+  let (integer, fractional) = zero.impl.utility.shift-decimal-left(
+    ..zero.impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(value))),
     digits: e,
   )
   return (
@@ -25,8 +25,8 @@
     frac: fractional,
     sign: if value >= 0 { "+" } else { "-" },
     pm: if uncertainty != none {
-      impl.utility.shift-decimal-left(
-        ..impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(uncertainty))),
+      zero.impl.utility.shift-decimal-left(
+        ..zero.impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(uncertainty))),
         digits: e,
       )
     },
@@ -95,7 +95,7 @@
 }
 
 #let mul(terms) = {
-  let unit = multiply-unit(terms.map(x => x.at("unit", default: none)))
+  let unit = units.multiply-unit(terms.map(x => x.at("unit", default: none)))
   let product = terms.map(as-float).product(default: 0)
   let error = if terms.any(x => as-uncertainty(x) != none) {
     (
@@ -120,7 +120,10 @@
 }
 
 #let div(dividend, divisor) = {
-  let unit = multiply-unit((dividend.at("unit", default: none), invert-unit(divisor.at("unit", default: none))))
+  let unit = units.multiply-unit((
+    dividend.at("unit", default: none),
+    units.invert-unit(divisor.at("unit", default: none)),
+  ))
   let terms = (dividend, divisor)
   let quotient = as-float(dividend) / as-float(divisor)
 
@@ -151,7 +154,7 @@
   let exponent-uncertainty = as-uncertainty(exponent)
   let base-float = as-float(base)
   let base-uncertainty = as-uncertainty(base)
-  let unit = pow-unit(base.at("unit", default: none), exponent-float)
+  let unit = units.pow-unit(base.at("unit", default: none), exponent-float)
   let result = calc.pow(as-float(base), exponent-float)
 
   let error-terms = (
@@ -184,7 +187,7 @@
   let index-uncertainty = as-uncertainty(index)
   let radicand-float = as-float(radicand)
   let radicand-uncertainty = as-uncertainty(radicand)
-  let unit = root-unit(radicand.at("unit", default: none), index-float)
+  let unit = units.root-unit(radicand.at("unit", default: none), index-float)
   let result = calc.root(radicand-float, index-float)
 
   let error-terms = (
@@ -210,73 +213,52 @@
 
 #let sqrt(radicand) = root(radicand, normalise-constant(2))
 
-// #let log(value, base) = {
-//   let result = calc.root(as-float(radicand), as-float(index))
-//   let error =
+#let log(value, base) = {
+  let result = calc.log(as-float(value), as-float(index))
+  let error = 0
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, 0),
+    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    source: (op: "log", data: (value, base)),
+  )
+}
 
-//   return (
-//     result,
-//     error,
-//     (
-//       int: integer,
-//       frac: fractional,
-//       sign: sign,
-//       pm: plus-minus,
-//       e: e,
-//     ),
-//     unit,
-//     (op: "log", data: (base, exp)),
-//   )
-// }
+#let ln(value) = log(value, e)
 
-// #let ln(value) = log(value, (float:calc.e, info:(...)))
+#let sin(angle) = {
+  let result = calc.sin(angle)
+  let error = 0
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, 0),
+    round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    source: (op: "sin", data: angle),
+  )
+}
 
-// #let sin(angle) = {
-//   result = calc.sin(as-float(angle))
-//   return (
-//     result,
-//     error,
-//     (
-//       int: integer,
-//       frac: fractional,
-//       sign: sign,
-//       pm: plus-minus,
-//       e: e,
-//     ),
-//     unit,
-//     (op: "sin", data: (angle,)),
-//   )
-// }
-// #let cos(angle) = {
-//   result = calc.cos(as-float(angle))
-//   return (
-//     result,
-//     error,
-//     (
-//       int: integer,
-//       frac: fractional,
-//       sign: sign,
-//       pm: plus-minus,
-//       e: e,
-//     ),
-//     unit,
-//     (op: "cos", data: (angle,)),
-//   )
-// }
+#let cos(angle) = {
+  let result = calc.cos(angle)
+  let error = 0
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, 0),
+    round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    source: (op: "sin", data: angle),
+  )
+}
 
-// #let tan(angle) = {
-//   result = calc.tan(as-float(angle))
-//   return (
-//     result,
-//     error,
-//     (
-//       int: integer,
-//       frac: fractional,
-//       sign: sign,
-//       pm: plus-minus,
-//       e: e,
-//     ),
-//     unit,
-//     (op: "tan", data: (angle,)),
-//   )
-// }
+#let tan(angle) = {
+  let result = calc.tan(angle)
+  let error = 0
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, 0),
+    round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    source: (op: "sin", data: angle),
+  )
+}

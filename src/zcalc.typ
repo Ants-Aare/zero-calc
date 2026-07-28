@@ -5,14 +5,13 @@
 // abs +
 // mul +
 // div +
-// pow
-// root
-// exp
-// sqrt
+// pow +
+// root +
+// exp +
+// sqrt +
 // sin/cos/tan
 // log
 // ln
-#import "lib/zero/src/zero.typ": *
 #import "operations.typ"
 #import "utility.typ"
 
