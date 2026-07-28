@@ -26,11 +26,11 @@
 #circle-area(r: zi.m("5"))
 
 
-#let universal-gas-constant = zcalc.declare-constant(j-mol-k("8.314"))
+#let universal-gas-constant = zcalc.const(j-mol-k("8.314"))
 #let arrhenius-equation = $A dot e^(E_A/(R dot T))$
 #arrhenius-equation
 #let arrhenius = function.from-math(arrhenius-equation).with(R: universal-gas-constant)
-#arrhenius(A: zcalc.declare-constant(1), EA: zi.joule("20e3"), T: zi.K("298.15"))
+#arrhenius(A: zcalc.const(1), EA: zi.joule("20e3"), T: zi.K("298.15"))
 
 #let sättigungs-molenbruch-gleichung = $x_B(T_0) dot e^(- (#box(inset: 1em)[$Delta H_(B,m)$])/R dot (1 / T - 1 / T_0))$
 #sättigungs-molenbruch-gleichung

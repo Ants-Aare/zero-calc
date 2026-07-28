@@ -20,7 +20,7 @@
 #let tau = calc.tau
 #let inf = calc.inf
 
-#let declare-constant(value) = {
+#let const(value) = {
   let result = utility.normalise-constant(value)
   utility.display(result)
 }

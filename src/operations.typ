@@ -49,6 +49,7 @@
       target-e,
     ),
     unit: unit,
+    constant: terms.any(x => not x.at("constant", default: false)),
     source: (op: "add", data: terms),
   )
 }
@@ -76,21 +77,21 @@
     info: term.info,
     round: as-round(term),
     unit: term.unit,
+    constant: term.at("constant", default: false),
     source: (op: "neg", data: term),
   )
 }
 
-#let abs(a, ..args) = {
-  let data = normalise-quantities((a,)).at(0)
-  data.float = calc.abs(data.float)
+#let abs(term) = {
   data.info.sign = "+"
-  display(
-    data.float,
-    data.uncertainty,
-    data.info,
-    data.at("unit", default: none),
-    source: (op: "abs", data: data),
-    ..args,
+  return (
+    float: calc.abs(as-float(term)),
+    uncertainty: as-uncertainty(term),
+    info: term.info,
+    round: as-round(term),
+    unit: term.unit,
+    constant: term.at("constant", default: false),
+    source: (op: "neg", data: term),
   )
 }
 
@@ -115,6 +116,7 @@
     info: create-info(product, error, target-e),
     round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
+    constant: terms.all(x => x.at("constant", default: false)),
     source: (op: "mul", data: terms),
   )
 }
@@ -145,6 +147,7 @@
     info: create-info(quotient, error, target-e),
     round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
+    constant: terms.all(x => x.at("constant", default: false)),
     source: (op: "div", data: terms),
   )
 }
@@ -176,6 +179,7 @@
       (base, exponent).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
     ),
     unit: unit,
+    constant: (base, exponent).all(x => x.at("constant", default: false)),
     source: (op: "pow", data: (base, exponent)),
   )
 }
@@ -207,6 +211,7 @@
     info: create-info(result, error, target-e),
     round: get-sig-figs((radicand).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
+    constant: (radicand, index).all(x => x.at("constant", default: false)),
     source: (op: "pow", data: (radicand, index)),
   )
 }
@@ -221,12 +226,14 @@
     uncertainty: error,
     info: create-info(result, error, 0),
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    constant: (value, base).all(x => x.at("constant", default: false)),
     source: (op: "log", data: (value, base)),
   )
 }
 
 #let ln(value) = log(value, e)
 
+//TODO: detect rad /degree/ arcsecond etc and convert them to the proper value
 #let sin(angle) = {
   let result = calc.sin(angle)
   let error = 0
@@ -235,6 +242,7 @@
     uncertainty: error,
     info: create-info(result, error, 0),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    constant: angle.at("constant", default: false),
     source: (op: "sin", data: angle),
   )
 }
@@ -247,6 +255,7 @@
     uncertainty: error,
     info: create-info(result, error, 0),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    constant: angle.at("constant", default: false),
     source: (op: "sin", data: angle),
   )
 }
@@ -259,6 +268,7 @@
     uncertainty: error,
     info: create-info(result, error, 0),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    constant: angle.at("constant", default: false),
     source: (op: "sin", data: angle),
   )
 }
