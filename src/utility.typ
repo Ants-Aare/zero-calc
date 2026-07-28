@@ -83,7 +83,7 @@
       to-str(content.at("tl", default: none)),
     )
       .filter(x => x != none)
-      .join("-")
+      .join()
   } else if content.has("children") {
     content.children.map(to-str).join("")
   } else if content.has("body") {
@@ -291,7 +291,7 @@
   let result = if value.at("unit", default: none) == none {
     num(value.info, round: as-round(value), ..value.at("args", default: ()))
   } else {
-    zi.units.qty(value.info, value.unit, round: value.round, ..value.at("args", default: ()))
+    zi.units.qty(value.info, value.unit, round: as-round(value), ..value.at("args", default: ()))
   }
   ((create-result-metadata(value),) + result.children.slice(1)).join()
 }

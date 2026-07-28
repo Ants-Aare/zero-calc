@@ -78,15 +78,21 @@
 }
 
 #let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
-#let invisible-symbols = regex("[\(\)]")
-#let illegal-symbols = regex("[,. −]")
+#let invisible-symbols = regex("[\)]")
+#let illegal-symbols = regex("[,. −\(]")
 
 #let resolve-leaf-node(it, vars) = {
-  let content-to-str = lower(utility.to-str(it))
+  let content-to-str = utility.to-str(it)
   let variable-name = content-to-str.replace(invisible-symbols, "").replace(illegal-symbols, "-")
   let variable = vars.at(variable-name, default: none)
-  let quantity = if variable-name == "e" and variable == none {
-    operations.e
+  let quantity = if variable == none {
+    if variable-name == "e" {
+      operations.e
+    } else if variable-name == "tau" {
+      operations.tau
+    } else if variable-name == "pi" {
+      operations.pi
+    }
   } else if variable != none {
     operations.normalise-quantity(variable)
   }
@@ -119,7 +125,7 @@
   it
 }
 #let from-math(equation) = {
-  let (tree, rest) = parsely.parse(equation, parsely.common.arithmetic)
+  let (tree, rest) = parsely.parse(equation, arithmetic)
 
   (..values) => utility.display(parsely.walk(
     tree,

@@ -21,9 +21,8 @@
 #let tau = calc.tau
 #let inf = calc.inf
 
-#let declare-constant(value, ..args) = {
-  let result = normalise-constant(value)
-  result += (args: arguments(..(terms.named() + datas.first().args.named())))
+#let declare-constant(value) = {
+  let result = utility.normalise-constant(value)
   utility.display(result)
 }
 

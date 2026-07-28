@@ -122,9 +122,9 @@
 #let div(dividend, divisor) = {
   let unit = multiply-unit((dividend.at("unit", default: none), invert-unit(divisor.at("unit", default: none))))
   let terms = (dividend, divisor)
-  let quotient = dividend.float / divisor.float
+  let quotient = as-float(dividend) / as-float(divisor)
 
-  let error = if terms.any(x => x.uncertainty != none) {
+  let error = if terms.any(x => as-uncertainty(x) != none) {
     (
       calc.abs(quotient)
         * rss(terms.map(x => {
@@ -169,7 +169,9 @@
     float: result,
     uncertainty: error,
     info: create-info(result, error, target-e),
-    round: get-sig-figs((base,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    round: get-sig-figs(
+      (base, exponent).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
+    ),
     unit: unit,
     source: (op: "pow", data: (base, exponent)),
   )
@@ -200,13 +202,13 @@
     float: result,
     uncertainty: error,
     info: create-info(result, error, target-e),
-    round: get-sig-figs((radicand,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    round: get-sig-figs((radicand).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
     source: (op: "pow", data: (radicand, index)),
   )
 }
 
-// #let sqrt(radicand) = root(radicand, (float:2, ...))
+#let sqrt(radicand) = root(radicand, normalise-constant(2))
 
 // #let log(value, base) = {
 //   let result = calc.root(as-float(radicand), as-float(index))
