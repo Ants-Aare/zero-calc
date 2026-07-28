@@ -10,7 +10,7 @@
 #let m-s2 = zi.m-s2
 
 #let acceleration-formula = $a times t$
-#let kinetic-energy-formula = $0.5 m_1 v(t)^2$
+#let kinetic-energy-formula = $1/2 m_1 v^2$
 
 #acceleration-formula\
 #kinetic-energy-formula
@@ -20,5 +20,5 @@
 #acceleration(t: s("5"), a: m-s2("2"))
 #m-s(10)
 
-#kinetic-energy(m1: zi.kg("75.000"), t: auto, v: m-s("1.0e1"))\
+#kinetic-energy(m1: zi.kg("75.000"), v: m-s("1.0e1"))\
 #kinetic-energy(m1: zi.kg("75.0"), t: s("5.0"), a: m-s2("2.0"), v: acceleration)

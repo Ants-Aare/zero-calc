@@ -48,23 +48,19 @@
   sin: (match: $sin$),
   cos: (match: $cos$),
   tan: (match: $tan$),
+  delta: (prefix: $delta$, prec: 3),
+  Delta: (prefix: $Delta$, prec: 3),
   // arcsin: (match: $arcsin$),
   // arccos: (match: $arccos$),
   // arctan: (match: $arctan$),
 )
 
-// works well, but since it's a niche use case I'll leave it out
-// #let convert-to-leaves(it) = {
-//   // converts multiplying leaf "delta" with leaf "E" to a single "delta E" leaf
-//   for i in range(it.args.len()).rev() {
-//     let arg = it.args.at(i)
-//     if type(arg) == dictionary and arg.head == "mul" and (arg.args.at(0).at("text", default: none) == "Δ") {
-//       it.args.remove(i)
-//       it.args.push(arg.args.join([ ]))
-//     }
-//   }
-//   it
-// }
+works well, but since it's a niche use case I'll leave it out
+#let convert-to-leaves(it) = {
+  // converts multiplying leaf "delta" with leaf "E" to a single "delta E" leaf
+
+  it
+}
 
 #let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
 #let invisible-symbols = regex("[\)]")
@@ -84,9 +80,15 @@
     }
   } else if variable != none {
     if type(variable) == function {
-      variable-name
+      let result = variable(..vars)
+      let candidate = utility.retrieve-metadata(result)
+      if candidate != none {
+        candidate
+      } else {
+        result
+      }
     } else if variable == auto {
-      auto
+      variable
     } else {
       operations.normalise-quantity(variable)
     }
@@ -109,6 +111,18 @@
 }
 
 #let apply-operations((head, args, slots), vars) = {
+  if head == "delta" {
+    return resolve-leaf-node($delta-$ + args.first(), vars)
+  } else if head == "Delta" {
+    return resolve-leaf-node($Delta-$ + args.first(), vars)
+  }
+
+  if (head == "call") {
+    return resolve-leaf-node(slots.fn, vars)
+  }
+
+  args = args.map(x => if type(x) == dictionary { x } else { resolve-leaf-node(x, vars) })
+  slots = slots.map(x => if type(x) == dictionary { x } else { resolve-leaf-node(x, vars) })
   if head == "add" or head == "pos" {
     operations.add(args)
   } else if head == "sub" {
@@ -129,14 +143,6 @@
     operations.root(slots.radicand, slots.index.value)
   } else if head == "sqrt" {
     operations.sqrt(slots.radicand)
-  } else if (head == "call") {
-    if type(slots.fn) == str {
-      let func = vars.at(slots.fn)
-      if func != none and type(func) == function {
-        return utility.retrieve-metadata(func(..vars))
-      }
-    }
-    slots.fn
   } else if head == "ln" {
     operations.ln(..args)
   } else if head == "log" {
@@ -158,7 +164,7 @@
   (..values) => utility.display(parsely.walk(
     tree,
     // pre: convert-to-leaves,
-    leaf: it => resolve-leaf-node(it, values.named()),
+    // leaf: it => resolve-leaf-node(it, values.named()),
     post: it => apply-operations(it, values.named()),
   ))
 }
