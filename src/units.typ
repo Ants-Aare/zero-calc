@@ -36,24 +36,13 @@
 
 #let invert-unit(units) = if units != none { (numerator: units.denominator, denominator: units.numerator) }
 
-#let operate-unit(units, func: it => it) = { units.map(((n, e)) => (n, func(e))) }
-
-// #let power-unit(units, n) = operate-unit(units, func: e => n * e)
-
-#let root-unit(units, n) = operate-unit(units, func: e => e / n)
-
 #let pow-unit(unit, exponent) = {
   if (unit == none) { return none }
-  let pairs = units-to-signed-pairs((unit,)) //.map(x => (x.at(0), x.at(1) * exponent))
+  let pairs = units-to-signed-pairs((unit,)).map(x => (x.at(0), x.at(1) * exponent))
   signed-pairs-to-unit(pairs)
 }
-
-#let root-unit-full(unit, n) = {
-  if unit == none { return none }
-  let pairs = unit-to-signed-pairs(unit)
-  assert(
-    pairs.all(((s, e)) => calc.rem(e, n) == 0),
-    message: "Cannot take root: unit exponent not evenly divisible by root degree.",
-  )
-  signed-pairs-to-unit(root-unit(..pairs, n).map(((s, e)) => (s, int(e))))
+#let root-unit(unit, exponent) = {
+  if (unit == none) { return none }
+  let pairs = units-to-signed-pairs((unit,)).map(x => (x.at(0), x.at(1) / exponent))
+  signed-pairs-to-unit(pairs)
 }

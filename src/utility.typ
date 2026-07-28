@@ -1,6 +1,98 @@
 #import "lib/zero/src/zero.typ": *
 #import impl.utility: *
 
+#let typst-builtin-sequence = ([A] + [ ] + [B]).func()
+#let typst-builtin-styled = [#set text(fill: red)].func()
+#let typst-builtin-symbol = [--].func()
+#let typst-builtin-context = [#context {}].func()
+#let typst-builtin-space = [ ].func()
+
+#let symbol-names = (
+  math.alpha: "alpha",
+  math.Alpha: "Alpha",
+  math.beta: "beta",
+  math.Beta: "Beta",
+  math.gamma: "gamma",
+  math.Gamma: "Gamma",
+  math.delta: "delta",
+  math.Delta: "Delta",
+  math.epsilon: "epsilon",
+  math.Epsilon: "Epsilon",
+  math.zeta: "zeta",
+  math.Zeta: "Zeta",
+  math.eta: "eta",
+  math.Eta: "Eta",
+  math.theta: "theta",
+  math.Theta: "Theta",
+  math.iota: "iota",
+  math.Iota: "Iota",
+  math.kappa: "kappa",
+  math.Kappa: "Kappa",
+  math.lambda: "lambda",
+  math.Lambda: "Lambda",
+  math.mu: "mu",
+  math.Mu: "Mu",
+  math.nu: "nu",
+  math.Nu: "Nu",
+  math.xi: "xi",
+  math.Xi: "Xi",
+  math.omicron: "omicron",
+  math.Omicron: "Omicron",
+  math.pi: "pi",
+  math.Pi: "Pi",
+  math.rho: "rho",
+  math.Rho: "Rho",
+  math.sigma: "sigma",
+  math.Sigma: "Sigma",
+  math.tau: "tau",
+  math.Tau: "Tau",
+  math.upsilon: "upsilon",
+  math.Upsilon: "Upsilon",
+  math.phi: "phi",
+  math.Phi: "Phi",
+  math.chi: "chi",
+  math.Chi: "Chi",
+  math.psi: "psi",
+  math.Psi: "Psi",
+  math.omega: "omega",
+  math.Omega: "Omega",
+)
+
+#let to-str(content) = {
+  if content == none {
+    return none
+  } else if type(content) == str {
+    content
+  } else if content.has("text") {
+    let alternative-name = symbol-names.at(content.text, default: none)
+    if alternative-name != none {
+      alternative-name
+    } else if (type(content.text) == str) {
+      content.text
+    } else {
+      to-str(content.text)
+    }
+  } else if content.func() == math.attach {
+    (
+      to-str(content.base),
+      to-str(content.at("b", default: none)),
+      to-str(content.at("br", default: none)),
+      to-str(content.at("bl", default: none)),
+      to-str(content.at("t", default: none)),
+      to-str(content.at("tr", default: none)),
+      to-str(content.at("tl", default: none)),
+    )
+      .filter(x => x != none)
+      .join("-")
+  } else if content.has("children") {
+    content.children.map(to-str).join("")
+  } else if content.has("body") {
+    to-str(content.body)
+  } else if content == [ ] {
+    "-"
+  }
+}
+
 #let num-metadata(info, raw, args) = (
   float: if type(raw) != float and type(raw) != int { impl.utility.info-to-float(info) } else { raw },
   uncertainty: impl.utility.info-to-uncertainty(info),
@@ -18,6 +110,24 @@
       return candidate
     } else if (t == int or t == float or t == str or t == content) {
       return num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+    }
+  }
+}
+
+#let normalise-constant(candidate) = {
+  let metadata = impl.utility.retrieve-metadata(candidate)
+  if metadata != none {
+    metadata.constant = true
+    return metadata
+  } else {
+    let t = type(candidate)
+    if t == dictionary {
+      candidate.constant = true
+      return candidate
+    } else if (t == int or t == float or t == str or t == content) {
+      candidate = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+      candidate.constant = true
+      return candidate
     }
   }
 }
@@ -62,6 +172,13 @@
     info-to-uncertainty(value.info)
   }
 }
+#let as-round(value) = {
+  let args = value.at("args", default: none)
+  if args != none {
+    return args.named().at("round", default: value.at("round", default: none))
+  }
+  return value.at("round", default: none)
+}
 
 #let array-as-floats(values) = values.map(as-float)
 #let array-as-uncertainties(values) = values.map(as-uncertainty)
@@ -89,6 +206,9 @@
 #let metadatas-as-uncertainties(metadatas) = metadatas.map(retrieve-metadata).map(as-uncertainty)
 
 #let get-places(infos, target-e) = {
+  if infos == () {
+    return none
+  }
   let places = infos.map(x => {
     let (info, round) = x
     let e = if info.e == none { 0 } else { int(info.e) }
@@ -120,6 +240,9 @@
 }
 
 #let get-sig-figs(infos) = {
+  if infos == () {
+    return none
+  }
   let sig-figs = infos.map(x => {
     let (info, round) = x
     let value = (info.int + info.frac).trim("0", at: start).len()
@@ -160,4 +283,15 @@
     get-lowest-e(terms)
   }
   return e
+}
+
+#let create-result-metadata(value) = [#metadata(value)<calc-result>]
+
+#let display(value) = {
+  let result = if value.at("unit", default: none) == none {
+    num(value.info, round: as-round(value), ..value.at("args", default: ()))
+  } else {
+    zi.units.qty(value.info, value.unit, round: value.round, ..value.at("args", default: ()))
+  }
+  ((create-result-metadata(value),) + result.children.slice(1)).join()
 }

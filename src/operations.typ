@@ -1,7 +1,14 @@
 // operations.typ
 #import "lib/zero/src/zero.typ": *
 #import "units.typ": *
-#import "utility.typ": as-float, as-uncertainty, get-e, get-places, get-sig-figs
+#import "utility.typ": (
+  as-float, as-round, as-uncertainty, get-e, get-places, get-sig-figs, normalise-constant, normalise-quantity,
+)
+
+#let pi = normalise-constant(calc.pi)
+#let e = normalise-constant(calc.e)
+#let tau = normalise-constant(calc.tau)
+#let inf = normalise-constant(calc.inf)
 
 #let rss(terms) = {
   terms = terms.filter(x => x != none)
@@ -38,7 +45,7 @@
     uncertainty: error,
     info: create-info(sum, error, target-e),
     round: get-places(
-      terms.map(x => (x.info, x.args.named().at("round", default: x.at("round", default: none)))),
+      terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
       target-e,
     ),
     unit: unit,
@@ -48,6 +55,7 @@
 
 #let sub(a, terms) = {
   let unit = a.at("unit", default: none)
+  if type(terms) != array { terms = (terms,) }
   assert(terms.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
   let negative-terms = terms.map(x => {
     if x.at("float", default: none) != none { x.float = -x.float }
@@ -66,7 +74,7 @@
     float: -as-float(term),
     uncertainty: as-uncertainty(term),
     info: term.info,
-    round: x.args.named().at("round", default: x.at("round", default: none)),
+    round: as-round(term),
     unit: term.unit,
     source: (op: "neg", data: term),
   )
@@ -89,7 +97,7 @@
 #let mul(terms) = {
   let unit = multiply-unit(terms.map(x => x.at("unit", default: none)))
   let product = terms.map(as-float).product(default: 0)
-  let error = if terms.any(x => x.uncertainty != none) {
+  let error = if terms.any(x => as-uncertainty(x) != none) {
     (
       calc.abs(product)
         * rss(terms.map(x => {
@@ -105,7 +113,7 @@
     float: product,
     uncertainty: error,
     info: create-info(product, error, target-e),
-    round: get-sig-figs(terms.map(x => (x.info, x.args.named().at("round", default: x.at("round", default: none))))),
+    round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
     source: (op: "mul", data: terms),
   )
@@ -132,7 +140,7 @@
     float: quotient,
     uncertainty: error,
     info: create-info(quotient, error, target-e),
-    round: get-sig-figs(terms.map(x => (x.info, x.args.named().at("round", default: x.at("round", default: none))))),
+    round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
     source: (op: "div", data: terms),
   )
@@ -156,36 +164,47 @@
   )
   let error = if error-terms.any(x => x != none) { rss(error-terms) }
 
-  let target-e = get-e(terms, result, "value")
+  let target-e = get-e(none, result, "value")
   return (
     float: result,
     uncertainty: error,
     info: create-info(result, error, target-e),
-    round: get-sig-figs(terms.map(x => (x.info, x.args.named().at("round", default: x.at("round", default: none))))),
+    round: get-sig-figs((base,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
     source: (op: "pow", data: (base, exponent)),
   )
 }
-// #let exp(exponent) = pow((float:calc.e, info:(...)), exponent)
 
-// #let root(radicand, index) = {
-//   let result = calc.root(as-float(radicand), as-float(index))
-//   let error =
+#let exp(exponent) = pow(e, exponent)
 
-//   return (
-//     result,
-//     error,
-//     (
-//       int: integer,
-//       frac: fractional,
-//       sign: sign,
-//       pm: plus-minus,
-//       e: e,
-//     ),
-//     unit,
-//     (op: "root", data: (base, exp)),
-//   )
-// }
+#let root(radicand, index) = {
+  let index-float = as-float(index)
+  let index-uncertainty = as-uncertainty(index)
+  let radicand-float = as-float(radicand)
+  let radicand-uncertainty = as-uncertainty(radicand)
+  let unit = root-unit(radicand.at("unit", default: none), index-float)
+  let result = calc.root(radicand-float, index-float)
+
+  let error-terms = (
+    if radicand-uncertainty != none and radicand-float != 0 {
+      index-float * calc.abs(result) * (radicand-uncertainty / calc.abs(radicand-float))
+    },
+    if index-uncertainty != none {
+      calc.abs(result) * calc.abs(calc.ln(radicand-float)) * index-uncertainty
+    },
+  )
+  let error = if error-terms.any(x => x != none) { rss(error-terms) }
+
+  let target-e = get-e(none, result, "value")
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, target-e),
+    round: get-sig-figs((radicand,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    unit: unit,
+    source: (op: "pow", data: (radicand, index)),
+  )
+}
 
 // #let sqrt(radicand) = root(radicand, (float:2, ...))
 
