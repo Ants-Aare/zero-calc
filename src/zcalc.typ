@@ -1,15 +1,16 @@
 #import "operations.typ"
 #import "utility.typ"
 
-#let pi = calc.pi
-#let e = calc.e
-#let tau = calc.tau
-#let inf = calc.inf
-
 #let const(value) = {
   let result = utility.normalise-constant(value)
   utility.display(result)
 }
+
+#let pi = const(calc.pi)
+#let e = const(calc.e)
+#let tau = const(calc.tau)
+#let inf = const(calc.inf)
+
 
 #let add(..terms) = {
   let datas = utility.normalise-quantities(terms.pos(), apply-unit: true)

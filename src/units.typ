@@ -41,6 +41,7 @@
   let pairs = units-to-signed-pairs((unit,)).map(x => (x.at(0), x.at(1) * exponent))
   signed-pairs-to-unit(pairs)
 }
+
 #let root-unit(unit, exponent) = {
   if (unit == none) { return none }
   let pairs = units-to-signed-pairs((unit,)).map(x => (x.at(0), x.at(1) / exponent))

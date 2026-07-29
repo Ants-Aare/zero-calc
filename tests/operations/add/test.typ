@@ -33,11 +33,11 @@
 #zcalc.add("6.11111e2", "62.222222222e2")\
 
 #pagebreak()
-#let z = zcalc.add([#zcalc.pi+-0.1234], str(zcalc.e) + "+-0.1234")
+#let z = zcalc.add([#calc.pi+-0.1234], str(calc.e) + "+-0.1234")
 #z\
-#assert(impl.utility.retrieve-metadata(z).float == zcalc.pi + zcalc.e)
+#assert(impl.utility.retrieve-metadata(z).float == calc.pi + calc.e)
 #assert(impl.utility.retrieve-metadata(z).uncertainty == 0.17451395359683994)
 #let z = zcalc.add(z, [1+-0.1])
 #z
-#assert(impl.utility.retrieve-metadata(z).float == zcalc.pi + zcalc.e + 1)
+#assert(impl.utility.retrieve-metadata(z).float == calc.pi + calc.e + 1)
 #assert(impl.utility.retrieve-metadata(z).uncertainty == 0.2011345818102894)

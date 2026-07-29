@@ -1,11 +1,7 @@
 #import "lib/zero/src/zero.typ": *
 #import impl.utility: *
 
-#let typst-builtin-sequence = ([A] + [ ] + [B]).func()
-#let typst-builtin-styled = [#set text(fill: red)].func()
 #let typst-builtin-symbol = [--].func()
-#let typst-builtin-context = [#context {}].func()
-#let typst-builtin-space = [ ].func()
 
 #let symbol-names = (
   math.alpha: "alpha",
@@ -91,69 +87,6 @@
   } else if content == [ ] {
     "-"
   }
-}
-
-#let num-metadata(info, raw, args) = (
-  float: if type(raw) != float and type(raw) != int { impl.utility.info-to-float(info) } else { raw },
-  uncertainty: impl.utility.info-to-uncertainty(info),
-  info: info,
-  args: args,
-)
-
-#let normalise-quantity(candidate) = {
-  let metadata = impl.utility.retrieve-metadata(candidate)
-  if metadata != none {
-    return metadata
-  } else {
-    let t = type(candidate)
-    if t == dictionary {
-      return candidate
-    } else if (t == int or t == float or t == str or t == content) {
-      return num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
-    }
-  }
-}
-
-#let normalise-constant(candidate) = {
-  let metadata = impl.utility.retrieve-metadata(candidate)
-  if metadata != none {
-    metadata.constant = true
-    return metadata
-  } else {
-    let t = type(candidate)
-    if t == dictionary {
-      candidate.constant = true
-      return candidate
-    } else if (t == int or t == float or t == str or t == content) {
-      candidate = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
-      candidate.constant = true
-      return candidate
-    }
-  }
-}
-
-#let normalise-quantities(quantities, apply-unit: false) = {
-  let datas = ()
-  let unit
-  for candidate in quantities {
-    let metadata = impl.utility.retrieve-metadata(candidate)
-    if metadata != none {
-      datas.push(metadata)
-      unit = metadata.at("unit", default: none)
-    } else {
-      let t = type(candidate)
-      if t == dictionary {
-        datas.push(candidate)
-      } else if (t == int or t == float or t == str or t == content) {
-        let data = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
-        if apply-unit and unit != none {
-          data += (unit: unit)
-        }
-        datas.push(data)
-      }
-    }
-  }
-  return (datas)
 }
 
 #let as-float(value) = {
@@ -273,6 +206,7 @@
   impl.rounding.assert-option(mode, "e mode", ("highest", "lowest", "value"))
   let e = if mode == "value" {
     let e = get-value-e(value)
+    // don't display 16 as 1.6e1
     if e == 1 {
       e = 0
     }
@@ -285,6 +219,35 @@
   return e
 }
 
+#let rss(terms) = {
+  terms = terms.filter(x => x != none)
+  if terms != () { calc.sqrt(terms.map(t => t * t).sum()) }
+}
+#let create-info(value, uncertainty, e) = {
+  let (integer, fractional) = impl.utility.shift-decimal-left(
+    ..impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(value))),
+    digits: e,
+  )
+  return (
+    int: integer,
+    frac: fractional,
+    sign: if value >= 0 { "+" } else { "-" },
+    pm: if uncertainty != none {
+      impl.utility.shift-decimal-left(
+        ..impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(uncertainty))),
+        digits: e,
+      )
+    },
+    e: if e != 0 { str(e).replace("−", "-") },
+  )
+}
+
+#let num-metadata(info, raw, args) = (
+  float: if type(raw) != float and type(raw) != int { impl.utility.info-to-float(info) } else { raw },
+  uncertainty: impl.utility.info-to-uncertainty(info),
+  info: info,
+  args: args,
+)
 #let create-result-metadata(value) = [#metadata(value)<calc-result>]
 
 #let display(value) = {
@@ -294,4 +257,60 @@
     zi.units.qty(value.info, value.unit, round: as-round(value), ..value.at("args", default: ()))
   }
   ((create-result-metadata(value),) + result.children.slice(1)).join()
+}
+
+#let normalise-quantity(candidate) = {
+  let metadata = impl.utility.retrieve-metadata(candidate)
+  if metadata != none {
+    return metadata
+  } else {
+    let t = type(candidate)
+    if t == dictionary {
+      return candidate
+    } else if (t == int or t == float or t == str or t == content) {
+      return num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+    }
+  }
+}
+
+#let normalise-constant(candidate) = {
+  let metadata = impl.utility.retrieve-metadata(candidate)
+  if metadata != none {
+    metadata.constant = true
+    return metadata
+  } else {
+    let t = type(candidate)
+    if t == dictionary {
+      candidate.constant = true
+      return candidate
+    } else if (t == int or t == float or t == str or t == content) {
+      candidate = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+      candidate.constant = true
+      return candidate
+    }
+  }
+}
+
+#let normalise-quantities(quantities, apply-unit: false) = {
+  let datas = ()
+  let unit
+  for candidate in quantities {
+    let metadata = impl.utility.retrieve-metadata(candidate)
+    if metadata != none {
+      datas.push(metadata)
+      unit = metadata.at("unit", default: none)
+    } else {
+      let t = type(candidate)
+      if t == dictionary {
+        datas.push(candidate)
+      } else if (t == int or t == float or t == str or t == content) {
+        let data = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+        if apply-unit and unit != none {
+          data += (unit: unit)
+        }
+        datas.push(data)
+      }
+    }
+  }
+  return (datas)
 }

@@ -1,37 +1,14 @@
 #import "lib/zero/src/zero.typ"
 #import "units.typ"
 #import "utility.typ": (
-  as-float, as-round, as-uncertainty, get-e, get-places, get-sig-figs, normalise-constant, normalise-quantity,
+  as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, normalise-constant,
+  normalise-quantity, rss,
 )
 
 #let pi = normalise-constant(calc.pi)
 #let e = normalise-constant(calc.e)
 #let tau = normalise-constant(calc.tau)
 #let inf = normalise-constant(calc.inf)
-
-#let rss(terms) = {
-  terms = terms.filter(x => x != none)
-  if terms != () { calc.sqrt(terms.map(t => t * t).sum()) }
-}
-
-#let create-info(value, uncertainty, e) = {
-  let (integer, fractional) = zero.impl.utility.shift-decimal-left(
-    ..zero.impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(value))),
-    digits: e,
-  )
-  return (
-    int: integer,
-    frac: fractional,
-    sign: if value >= 0 { "+" } else { "-" },
-    pm: if uncertainty != none {
-      zero.impl.utility.shift-decimal-left(
-        ..zero.impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(uncertainty))),
-        digits: e,
-      )
-    },
-    e: if e != 0 { str(e).replace("−", "-") },
-  )
-}
 
 #let add(terms) = {
   let unit = terms.first().at("unit", default: none)
