@@ -5,6 +5,7 @@
   normalise-quantity, rss,
 )
 
+#let const = normalise-constant
 #let pi = normalise-constant(calc.pi)
 #let e = normalise-constant(calc.e)
 #let tau = normalise-constant(calc.tau)
@@ -137,7 +138,7 @@
   let result = calc.pow(as-float(base), exponent-float)
 
   let error-terms = (
-    if base-uncertainty != none and base.float != 0 {
+    if base-uncertainty != none and base-float != 0 {
       exponent-float * calc.abs(result) * (base-uncertainty / calc.abs(base-float))
     },
     if exponent-uncertainty != none {
@@ -146,6 +147,10 @@
   )
   let error = if error-terms.any(x => x != none) { rss(error-terms) }
 
+  // for integer exponents don't consider them to affect the amount of sig figs. When an uncertainty is specified it should obviously affect the sig figs
+  if exponent.info.frac.len() == 0 and exponent.info.pm == none {
+    exponent.constant = true
+  }
   let target-e = get-e(none, result, "value")
   return (
     float: result,
@@ -181,12 +186,17 @@
   )
   let error = if error-terms.any(x => x != none) { rss(error-terms) }
 
+  if index.info.pm == none {
+    index.constant = true
+  }
   let target-e = get-e(none, result, "value")
   return (
     float: result,
     uncertainty: error,
     info: create-info(result, error, target-e),
-    round: get-sig-figs((radicand,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    round: get-sig-figs(
+      (radicand, index).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
+    ),
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
     source: (op: "pow", data: (radicand, index)),
@@ -196,13 +206,37 @@
 #let sqrt(radicand) = root(radicand, normalise-constant(2))
 
 #let log(value, base) = {
-  let result = calc.log(as-float(value), base: as-float(base))
-  let error = none
+  let value-float = as-float(value)
+  let value-uncertainty = as-uncertainty(value)
+  let base-float = as-float(base)
+  let base-uncertainty = as-uncertainty(base)
+
+  assert(value.at("unit", default: none) == none, message: "log: value must not carry a unit.")
+  assert(base.at("unit", default: none) == none, message: "log: base must not carry a unit.")
+  assert(value-float > 0, message: "log: value must be positive.")
+  assert(base-float > 0 and base-float != 1, message: "log: base must be positive and != 1.")
+
+  let result = calc.log(value-float, base: base-float)
+  let ln-base = calc.ln(base-float)
+
+  let error-terms = (
+    if value-uncertainty != none {
+      value-uncertainty / (calc.abs(value-float) * calc.abs(ln-base))
+    },
+    if base-uncertainty != none {
+      calc.abs(result) * base-uncertainty / (calc.abs(base-float) * calc.abs(ln-base))
+    },
+  )
+  let error = if error-terms.any(x => x != none) { rss(error-terms) }
+  let target-e = get-e(none, result, "value")
+
   return (
     float: result,
     uncertainty: error,
-    info: create-info(result, error, 0),
-    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    info: create-info(result, error, target-e),
+    round: get-sig-figs(
+      (value, base).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
+    ),
     constant: (value, base).all(x => x.at("constant", default: false)),
     source: (op: "log", data: (value, base)),
   )
@@ -212,12 +246,18 @@
 
 //TODO: detect rad /degree/ arcsecond etc and convert them to the proper value
 #let sin(angle) = {
-  let result = calc.sin(as-float(angle))
-  let error = none
+  let angle-float = as-float(angle)
+  let angle-uncertainty = as-uncertainty(angle)
+  assert(angle.at("unit", default: none) == none, message: "sin: angle must not carry a unit (radians assumed).")
+
+  let result = calc.sin(angle-float)
+  let error = if angle-uncertainty != none { calc.abs(calc.cos(angle-float)) * angle-uncertainty }
+  let target-e = get-e(none, result, "value")
+
   return (
     float: result,
     uncertainty: error,
-    info: create-info(result, error, 0),
+    info: create-info(result, error, target-e),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
     source: (op: "sin", data: angle),
@@ -225,27 +265,107 @@
 }
 
 #let cos(angle) = {
-  let result = calc.cos(as-float(angle))
-  let error = none
+  let angle-float = as-float(angle)
+  let angle-uncertainty = as-uncertainty(angle)
+  assert(angle.at("unit", default: none) == none, message: "cos: angle must not carry a unit (radians assumed).")
+
+  let result = calc.cos(angle-float)
+  let error = if angle-uncertainty != none { calc.abs(calc.sin(angle-float)) * angle-uncertainty }
+  let target-e = get-e(none, result, "value")
+
   return (
     float: result,
     uncertainty: error,
-    info: create-info(result, error, 0),
+    info: create-info(result, error, target-e),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
-    source: (op: "sin", data: angle),
+    source: (op: "cos", data: angle),
   )
 }
 
 #let tan(angle) = {
-  let result = calc.tan(as-float(angle))
-  let error = none
+  let angle-float = as-float(angle)
+  let angle-uncertainty = as-uncertainty(angle)
+  assert(angle.at("unit", default: none) == none, message: "tan: angle must not carry a unit (radians assumed).")
+
+  let result = calc.tan(angle-float)
+  let error = if angle-uncertainty != none {
+    angle-uncertainty / calc.pow(calc.cos(angle-float), 2)
+  }
+  let target-e = get-e(none, result, "value")
+
   return (
     float: result,
     uncertainty: error,
-    info: create-info(result, error, 0),
+    info: create-info(result, error, target-e),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
-    source: (op: "sin", data: angle),
+    source: (op: "tan", data: angle),
+  )
+}
+
+#let asin(value) = {
+  let value-float = as-float(value)
+  let value-uncertainty = as-uncertainty(value)
+  assert(value.at("unit", default: none) == none, message: "asin: value must not carry a unit.")
+  assert(value-float >= -1 and value-float <= 1, message: "asin: value must be in [-1, 1].")
+
+  let result = calc.asin(value-float)
+  let error = if value-uncertainty != none {
+    value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
+  }
+  let target-e = get-e(none, result, "value")
+
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, target-e),
+    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    constant: value.at("constant", default: false),
+    source: (op: "asin", data: value),
+  )
+}
+
+#let acos(value) = {
+  let value-float = as-float(value)
+  let value-uncertainty = as-uncertainty(value)
+  assert(value.at("unit", default: none) == none, message: "acos: value must not carry a unit.")
+  assert(value-float >= -1 and value-float <= 1, message: "acos: value must be in [-1, 1].")
+
+  let result = calc.acos(value-float)
+  // same magnitude as asin, just opposite sign in the derivative — squared away by rss
+  let error = if value-uncertainty != none {
+    value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
+  }
+  let target-e = get-e(none, result, "value")
+
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, target-e),
+    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    constant: value.at("constant", default: false),
+    source: (op: "acos", data: value),
+  )
+}
+
+#let atan(value) = {
+  let value-float = as-float(value)
+  let value-uncertainty = as-uncertainty(value)
+  assert(value.at("unit", default: none) == none, message: "atan: value must not carry a unit.")
+
+  let result = calc.atan(value-float)
+  let error = if value-uncertainty != none {
+    value-uncertainty / (1 + calc.pow(value-float, 2))
+  }
+  let target-e = get-e(none, result, "value")
+
+  return (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, target-e),
+    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    constant: value.at("constant", default: false),
+    source: (op: "atan", data: value),
   )
 }
