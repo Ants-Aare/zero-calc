@@ -130,12 +130,20 @@
 }
 
 #let pow(base, exponent) = {
+  assert(exponent.at("unit", default: none) == none, message: "pow: exponent must not carry a unit.")
+
   let exponent-float = as-float(exponent)
   let exponent-uncertainty = as-uncertainty(exponent)
   let base-float = as-float(base)
   let base-uncertainty = as-uncertainty(base)
+
+  assert(
+    base.at("unit", default: none) == none or exponent-uncertainty == none,
+    message: "pow: exponent must be exact (no uncertainty) when base carries a unit.",
+  )
+
   let unit = units.pow-unit(base.at("unit", default: none), exponent-float)
-  let result = calc.pow(as-float(base), exponent-float)
+  let result = calc.pow(base-float, exponent-float)
 
   let error-terms = (
     if base-uncertainty != none and base-float != 0 {
@@ -147,7 +155,6 @@
   )
   let error = if error-terms.any(x => x != none) { rss(error-terms) }
 
-  // for integer exponents don't consider them to affect the amount of sig figs. When an uncertainty is specified it should obviously affect the sig figs
   if exponent.info.frac.len() == 0 and exponent.info.pm == none {
     exponent.constant = true
   }
@@ -172,8 +179,13 @@
   let index-uncertainty = as-uncertainty(index)
   let radicand-float = as-float(radicand)
   let radicand-uncertainty = as-uncertainty(radicand)
-  let unit = units.root-unit(radicand.at("unit", default: none), index-float)
   assert(int(index-float) == index-float, message: "only integer index is allowed. index: " + str(index-float))
+  assert(
+    radicand.at("unit", default: none) == none or index-uncertainty == none,
+    message: "root: index must be exact (no uncertainty) when radicand carries a unit.",
+  )
+
+  let unit = units.root-unit(radicand.at("unit", default: none), index-float)
   let result = calc.root(radicand-float, int(index-float))
 
   let error-terms = (
