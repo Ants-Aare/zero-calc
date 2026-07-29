@@ -171,7 +171,7 @@
   }
 }
 
-#let math-to-equation-tree(math) = {
+#let math-to-tree(math) = {
   let (tree, rest) = parsely.parse(math, arithmetic)
   return tree
 }
@@ -184,4 +184,4 @@
   utility.display(result)
 }
 
-#let calculate-math(math) = calculate.with(math-to-equation(math))
+#let calculate-math(math) = calculate-tree.with(math-to-tree(math))
