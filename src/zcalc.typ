@@ -26,18 +26,17 @@
   return utility.display(result)
 }
 
-#let abs(a, ..args) = {
-  let data = utility.normalise-quantities((a,)).at(0)
-  data.float = calc.abs(data.float)
-  data.info.sign = "+"
-  return utility.display(
-    data.float,
-    data.uncertainty,
-    data.info,
-    data.at("unit", default: none),
-    source: (op: "abs", data: data),
-    ..args,
-  )
+#let abs(value, ..args) = {
+  let value = utility.normalise-quantity(value)
+  let result = operations.abs(value)
+  result += (args: arguments(..(args.named() + value.args.named())))
+  return utility.display(result)
+}
+#let neg(value, ..args) = {
+  let value = utility.normalise-quantity(value)
+  let result = operations.neg(value)
+  result += (args: arguments(..(args.named() + value.args.named())))
+  return utility.display(result)
 }
 
 #let mul(..terms) = {
@@ -50,13 +49,67 @@
 #let div(dividend, divisor, ..args) = {
   let (dividend, divisor) = utility.normalise-quantities((dividend, divisor))
   let result = operations.div(dividend, divisor)
-  result += (args: arguments(..(terms.named() + datas.first().args.named())))
+  result += (args: arguments(..(args.named() + dividend.args.named())))
   return utility.display(result)
 }
 
 #let pow(base, exp, ..args) = {
   let (base, exp) = utility.normalise-quantities((base, exp))
   let result = operations.pow(base, exp)
-  let args = arguments(..(args.named() + base.args.named()))
-  return utility.display(..result, args)
+  result += (args: arguments(..(args.named() + base.args.named())))
+  return utility.display(result)
 }
+#let exp(exp, ..args) = {
+  let exp = utility.normalise-quantity(exp)
+  let result = operations.exp(exp)
+  result += (args: arguments(..(args.named() + exp.args.named())))
+  return utility.display(result)
+}
+
+#let root(radicand, index, ..args) = {
+  let (radicand, index) = utility.normalise-quantities((radicand, index))
+  let result = operations.root(radicand, index)
+  result += (args: arguments(..(args.named() + radicand.args.named())))
+  return utility.display(result)
+}
+
+#let sqrt(radicand, ..args) = {
+  let radicand = utility.normalise-quantity(radicand)
+  let result = operations.sqrt(radicand)
+  result += (args: arguments(..(args.named() + radicand.args.named())))
+  return utility.display(result)
+}
+
+#let log(value, base, ..args) = {
+  let (value, base) = utility.normalise-quantities((value, base))
+  let result = operations.log(value, base)
+  result += (args: arguments(..(args.named() + value.args.named())))
+  return utility.display(result)
+}
+
+#let ln(value, ..args) = {
+  let value = utility.normalise-quantity(value)
+  let result = operations.sqrt(value)
+  result += (args: arguments(..(args.named() + value.args.named())))
+  return utility.display(result)
+}
+
+#let sin(angle, ..args) = {
+  let angle = utility.normalise-quantity(angle)
+  let result = operations.sin(angle)
+  result += (args: arguments(..(args.named() + angle.args.named())))
+  return utility.display(result)
+}
+#let cos(angle, ..args) = {
+  let angle = utility.normalise-quantity(angle)
+  let result = operations.cos(angle)
+  result += (args: arguments(..(args.named() + angle.args.named())))
+  return utility.display(result)
+}
+#let tan(angle, ..args) = {
+  let angle = utility.normalise-quantity(angle)
+  let result = operations.tan(angle)
+  result += (args: arguments(..(args.named() + angle.args.named())))
+  return utility.display(result)
+}
+
