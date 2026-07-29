@@ -1,16 +1,8 @@
 #import "@preview/parsely:0.1.1"
 #import "operations.typ"
 #import "utility.typ"
-// #import "match.typ": loose, slot, tight
 
-
-
-#let declare(
-  method,
-  name: auto,
-) = {}
-
-// copy pasted and modified based on parsely.common.arithmetic
+// based on parsely.common.arithmetic
 #let arithmetic = (
   eq: (infix: $=$, prec: 0),
 
@@ -25,7 +17,8 @@
 
   group: (match: $(parsely.slot("expr*"))$),
   frac: (match: math.frac),
-  abs: (match: math.abs),
+  abs: (match: $abs(parsely.slot("value"))$),
+  abs-bars: (match: $|parsely.slot("value")|$),
 
   pow: (
     match: math.attach,
@@ -40,14 +33,15 @@
   root: (match: math.root(parsely.slot("index", guard: it => it != none), parsely.slot("radicand"))),
   sqrt: (match: $sqrt(parsely.slot("radicand"))$),
 
+  ln: (prefix: $ln$, prec: 10),
+  log: (prefix: $log_parsely.slot("base")$, prec: 10),
+  log10: (prefix: $log$, prec: 0),
+
+  sin: (prefix: $sin$),
+  cos: (prefix: $cos$),
+  tan: (prefix: $tan$),
   call: (match: $parsely.slot("fn") parsely.tight (parsely.slot("args*"))$),
 
-  ln: (match: $ln$),
-  log: (match: $log$),
-
-  sin: (match: $sin$),
-  cos: (match: $cos$),
-  tan: (match: $tan$),
   delta: (prefix: $delta$, prec: 3),
   Delta: (prefix: $Delta$, prec: 3),
   // arcsin: (match: $arcsin$),
@@ -55,12 +49,29 @@
   // arctan: (match: $arctan$),
 )
 
-works well, but since it's a niche use case I'll leave it out
-#let convert-to-leaves(it) = {
-  // converts multiplying leaf "delta" with leaf "E" to a single "delta E" leaf
+#let inverse-operation = (
+  add: ("sub",),
+  sub: ("add",),
+  pos: ("pos",),
+  neg: ("neg",),
+  times: ("frac",),
+  dot: ("frac",),
+  mul: ("frac",),
+  group: ("",),
+  frac: ("mul",),
+  abs: ("",),
+  pow: ("root",),
+  root: ("pow",),
+  sqrt: ("pow", it => (args: operations.normalise-constant(2))),
+  call: ("",),
 
-  it
-}
+  ln: "exp",
+  log: "pow",
+
+  // sin: ("arcsin",),
+  // cos: ("arccos",),
+  // tan: ("arctan",),
+)
 
 #let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
 #let invisible-symbols = regex("[\)]")
@@ -118,7 +129,7 @@ works well, but since it's a niche use case I'll leave it out
   }
 
   if (head == "call") {
-    return resolve-leaf-node(slots.fn, vars)
+    return resolve-leaf-node(((slots.fn, [-]) + slots.values().slice(1)).join(), vars)
   }
 
   args = args.map(x => if type(x) == dictionary { x } else { resolve-leaf-node(x, vars) })
@@ -131,40 +142,46 @@ works well, but since it's a niche use case I'll leave it out
     operations.neg(args.first())
   } else if head == "mul" or head == "dot" or head == "times" {
     operations.mul(args)
-  } else if head == "frac" {
+  } else if (head == "frac") {
     operations.div(slots.num, slots.denom)
-  } else if head == "abs" {
-    operations.abs(args)
+  } else if head == "abs" or head == "abs-bars" {
+    operations.abs(slots.value)
   } else if head == "pow" {
     operations.pow(..args)
+  } else if head == "exp" {
+    operations.exp(args)
   } else if head == "group" {
     slots.expr
   } else if head == "root" {
-    operations.root(slots.radicand, slots.index.value)
+    operations.root(slots.radicand, slots.index)
   } else if head == "sqrt" {
     operations.sqrt(slots.radicand)
   } else if head == "ln" {
     operations.ln(..args)
-  } else if head == "log" {
-    operations.log(..args)
+  } else if head == "log10" or head == "log" or head == "log-br" or head == "log10-br" {
+    operations.log(args.first(), slots.at("base", default: operations.normalise-constant(10)))
   } else if head == "sin" {
-    operations.sin(args)
+    operations.sin(args.first())
   } else if head == "cos" {
-    operations.cos(args)
+    operations.cos(args.first())
   } else if head == "tan" {
-    operations.tan(args)
+    operations.tan(args.first())
   } else {
     panic(head)
   }
 }
 
-#let from-math(equation) = {
-  let (tree, rest) = parsely.parse(equation, arithmetic)
-
-  (..values) => utility.display(parsely.walk(
-    tree,
-    // pre: convert-to-leaves,
-    // leaf: it => resolve-leaf-node(it, values.named()),
-    post: it => apply-operations(it, values.named()),
-  ))
+#let math-to-equation-tree(math) = {
+  let (tree, rest) = parsely.parse(math, arithmetic)
+  return tree
 }
+
+#let calculate-tree(tree, ..values) = {
+  let result = parsely.walk(
+    tree,
+    post: it => apply-operations(it, values.named()),
+  )
+  utility.display(result)
+}
+
+#let calculate-math(math) = calculate.with(math-to-equation(math))

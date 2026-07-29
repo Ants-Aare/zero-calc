@@ -1,17 +1,3 @@
-// calc.typ
-// planned for now:
-// add +
-// sub +
-// abs +
-// mul +
-// div +
-// pow +
-// root +
-// exp +
-// sqrt +
-// sin/cos/tan
-// log
-// ln
 #import "operations.typ"
 #import "utility.typ"
 

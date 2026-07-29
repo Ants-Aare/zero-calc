@@ -1,4 +1,3 @@
-// operations.typ
 #import "lib/zero/src/zero.typ"
 #import "units.typ"
 #import "utility.typ": (
@@ -76,20 +75,20 @@
     uncertainty: as-uncertainty(term),
     info: term.info,
     round: as-round(term),
-    unit: term.unit,
+    unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
     source: (op: "neg", data: term),
   )
 }
 
 #let abs(term) = {
-  data.info.sign = "+"
+  term.info.sign = "+"
   return (
     float: calc.abs(as-float(term)),
     uncertainty: as-uncertainty(term),
     info: term.info,
     round: as-round(term),
-    unit: term.unit,
+    unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
     source: (op: "neg", data: term),
   )
@@ -192,7 +191,8 @@
   let radicand-float = as-float(radicand)
   let radicand-uncertainty = as-uncertainty(radicand)
   let unit = units.root-unit(radicand.at("unit", default: none), index-float)
-  let result = calc.root(radicand-float, index-float)
+  assert(int(index-float) == index-float, message: "only integer index is allowed. index: " + str(index-float))
+  let result = calc.root(radicand-float, int(index-float))
 
   let error-terms = (
     if radicand-uncertainty != none and radicand-float != 0 {
@@ -209,7 +209,7 @@
     float: result,
     uncertainty: error,
     info: create-info(result, error, target-e),
-    round: get-sig-figs((radicand).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    round: get-sig-figs((radicand,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
     source: (op: "pow", data: (radicand, index)),
@@ -219,8 +219,8 @@
 #let sqrt(radicand) = root(radicand, normalise-constant(2))
 
 #let log(value, base) = {
-  let result = calc.log(as-float(value), as-float(index))
-  let error = 0
+  let result = calc.log(as-float(value), base: as-float(base))
+  let error = none
   return (
     float: result,
     uncertainty: error,
@@ -235,8 +235,8 @@
 
 //TODO: detect rad /degree/ arcsecond etc and convert them to the proper value
 #let sin(angle) = {
-  let result = calc.sin(angle)
-  let error = 0
+  let result = calc.sin(as-float(angle))
+  let error = none
   return (
     float: result,
     uncertainty: error,
@@ -248,8 +248,8 @@
 }
 
 #let cos(angle) = {
-  let result = calc.cos(angle)
-  let error = 0
+  let result = calc.cos(as-float(angle))
+  let error = none
   return (
     float: result,
     uncertainty: error,
@@ -261,8 +261,8 @@
 }
 
 #let tan(angle) = {
-  let result = calc.tan(angle)
-  let error = 0
+  let result = calc.tan(as-float(angle))
+  let error = none
   return (
     float: result,
     uncertainty: error,

@@ -6,35 +6,27 @@
 #let j-mol = zi.declare("J mol^-1")
 
 #set-unit(fraction: "fraction")
-#let lambert-beer = function.declare(
-  (extinction-coefficient, concentration, distance) => op.mul(extinction-coefficient, concentration, distance),
-  name: "Lambert Beer Law",
-)
-#let target-volume = function.declare(
-  (target-c, current-c, current-v) => op.div(op.mul(current-c, current-v), target-c),
-  name: "Lambert Beer Law",
-)
 
 #let kinetic-energy-formula = $(m_1 v^2)/2$
 #kinetic-energy-formula
-#let kinetic-energy = function.from-math(kinetic-energy-formula)
+#let kinetic-energy = function.calculate-math(kinetic-energy-formula)
 #kinetic-energy(m1: zi.kg("75.0"), v: zi.m-s("1.50"))
 
 #let circle-area-formula = $pi r^2$
 #circle-area-formula
-#let circle-area = function.from-math(circle-area-formula)
+#let circle-area = function.calculate-math(circle-area-formula)
 #circle-area(r: zi.m("5"))
 
 
 #let universal-gas-constant = zcalc.const(j-mol-k("8.314"))
 #let arrhenius-equation = $A dot e^(E_A/(R dot T))$
 #arrhenius-equation
-#let arrhenius = function.from-math(arrhenius-equation).with(R: universal-gas-constant)
+#let arrhenius = function.calculate-math(arrhenius-equation).with(R: universal-gas-constant)
 #arrhenius(A: zcalc.const(1), EA: zi.joule("20e3"), T: zi.K("298.15"))
 
 #let sättigungs-molenbruch-gleichung = $x_B(T_0) dot e^(- (#box(inset: 1em)[$Delta H_(B,m)$])/R dot (1 / T - 1 / T_0))$
 #sättigungs-molenbruch-gleichung
-#let sättigungs-molenbruch = function.from-math(sättigungs-molenbruch-gleichung).with(R: universal-gas-constant)
+#let sättigungs-molenbruch = function.calculate-math(sättigungs-molenbruch-gleichung).with(R: universal-gas-constant)
 
 #sättigungs-molenbruch(
   Delta-HB-m: j-mol("25.38e3"),
