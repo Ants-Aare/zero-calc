@@ -130,17 +130,19 @@
 }
 
 #let pow(base, exponent) = {
-  assert(exponent.at("unit", default: none) == none, message: "pow: exponent must not carry a unit.")
-
-  let exponent-float = as-float(exponent)
   let exponent-uncertainty = as-uncertainty(exponent)
-  let base-float = as-float(base)
-  let base-uncertainty = as-uncertainty(base)
-
   assert(
-    base.at("unit", default: none) == none or exponent-uncertainty == none,
+    units.is-unitless(exponent),
+    message: "pow: exponent must not carry a unit: " + repr(exponent.at("unit", default: none)),
+  )
+  assert(
+    units.is-unitless(base) or exponent-uncertainty == none,
     message: "pow: exponent must be exact (no uncertainty) when base carries a unit.",
   )
+
+  let exponent-float = as-float(exponent)
+  let base-float = as-float(base)
+  let base-uncertainty = as-uncertainty(base)
 
   let unit = units.pow-unit(base.at("unit", default: none), exponent-float)
   let result = calc.pow(base-float, exponent-float)
@@ -223,8 +225,8 @@
   let base-float = as-float(base)
   let base-uncertainty = as-uncertainty(base)
 
-  assert(value.at("unit", default: none) == none, message: "log: value must not carry a unit.")
-  assert(base.at("unit", default: none) == none, message: "log: base must not carry a unit.")
+  assert(units.is-unitless(value), message: "log: value must not carry a unit.")
+  assert(units.is-unitless(base), message: "log: base must not carry a unit.")
   assert(value-float > 0, message: "log: value must be positive.")
   assert(base-float > 0 and base-float != 1, message: "log: base must be positive and != 1.")
 
@@ -260,11 +262,11 @@
 #let sin(angle) = {
   let angle-float = as-float(angle)
   let angle-uncertainty = as-uncertainty(angle)
-  assert(angle.at("unit", default: none) == none, message: "sin: angle must not carry a unit (radians assumed).")
+  assert(units.is-unitless(angle), message: "sin: angle must not carry a unit (radians assumed).")
 
   let result = calc.sin(angle-float)
   let error = if angle-uncertainty != none { calc.abs(calc.cos(angle-float)) * angle-uncertainty }
-  let target-e = get-e(none, result, "value")
+  let target-e = 0
 
   return (
     float: result,
@@ -279,11 +281,11 @@
 #let cos(angle) = {
   let angle-float = as-float(angle)
   let angle-uncertainty = as-uncertainty(angle)
-  assert(angle.at("unit", default: none) == none, message: "cos: angle must not carry a unit (radians assumed).")
+  assert(units.is-unitless(angle), message: "cos: angle must not carry a unit (radians assumed).")
 
   let result = calc.cos(angle-float)
   let error = if angle-uncertainty != none { calc.abs(calc.sin(angle-float)) * angle-uncertainty }
-  let target-e = get-e(none, result, "value")
+  let target-e = 0
 
   return (
     float: result,
@@ -298,7 +300,7 @@
 #let tan(angle) = {
   let angle-float = as-float(angle)
   let angle-uncertainty = as-uncertainty(angle)
-  assert(angle.at("unit", default: none) == none, message: "tan: angle must not carry a unit (radians assumed).")
+  assert(units.is-unitless(angle), message: "tan: angle must not carry a unit (radians assumed).")
 
   let result = calc.tan(angle-float)
   let error = if angle-uncertainty != none {
@@ -319,7 +321,7 @@
 #let asin(value) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
-  assert(value.at("unit", default: none) == none, message: "asin: value must not carry a unit.")
+  assert(units.is-unitless(angle), message: "asin: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "asin: value must be in [-1, 1].")
 
   let result = calc.asin(value-float)
@@ -341,7 +343,7 @@
 #let acos(value) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
-  assert(value.at("unit", default: none) == none, message: "acos: value must not carry a unit.")
+  assert(units.is-unitless(angle), message: "acos: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "acos: value must be in [-1, 1].")
 
   let result = calc.acos(value-float)
@@ -364,7 +366,7 @@
 #let atan(value) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
-  assert(value.at("unit", default: none) == none, message: "atan: value must not carry a unit.")
+  assert(units.is-unitless(angle), message: "atan: value must not carry a unit.")
 
   let result = calc.atan(value-float)
   let error = if value-uncertainty != none {

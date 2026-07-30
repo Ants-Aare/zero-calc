@@ -1,3 +1,10 @@
+#let is-unitless(value) = {
+  if value.at("unit", default: none) == none or (value.unit.numerator == () and value.unit.denominator == ()) {
+    return true
+  }
+  return false
+}
+
 #let units-to-signed-pairs(units) = {
   units = units.filter(x => x != none)
   return (

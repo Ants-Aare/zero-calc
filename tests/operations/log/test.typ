@@ -7,7 +7,7 @@
 #x\
 #let x = zcalc.log("1.3e3", "10")
 #x\
-#let x = zcalc.log("1.3e3", "10+-0.1")
+#let x = zcalc.log("1.3e3", "10+-1")
 #x\
-#let x = zcalc.log("1+-0.01e3", "10+-0.1")
+#let x = zcalc.log("1+-0.4e3", "10+-1")
 #x\
