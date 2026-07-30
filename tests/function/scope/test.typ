@@ -15,8 +15,8 @@
 #acceleration-formula\
 #kinetic-energy-formula
 
-#let acceleration = function.calculate-math(acceleration-formula)
-#let kinetic-energy = function.calculate-math(kinetic-energy-formula)
+#let acceleration = equation.calculate(acceleration-formula)
+#let kinetic-energy = equation.calculate(kinetic-energy-formula)
 #acceleration(t: s("5"), a: m-s2("2"))
 #m-s(10)
 

@@ -1,5 +1,4 @@
 #import "utility.typ"
-#import "display-operations.typ" as op
 #import "/src/lib/zero/src/zero.typ"
 
 #let variable(value, show-error: true) = {

@@ -3,7 +3,7 @@
 #import "operations.typ"
 
 // based on parsely.common.arithmetic
-#let arithmetic = (
+#let grammar = (
   eq: (infix: $=$, prec: 0),
 
   add: (infix: $+$, prec: 1, assoc: true),
@@ -17,7 +17,7 @@
 
   group: (match: $(parsely.slot("expr*"))$),
   frac: (match: math.frac),
-  abs: (match: $abs(parsely.slot("value"))$),
+  abs: (match: math.abs),
   abs-bars: (match: $|parsely.slot("value")|$),
 
   pow: (
@@ -40,37 +40,13 @@
   sin: (prefix: $sin$),
   cos: (prefix: $cos$),
   tan: (prefix: $tan$),
+  arcsin: (prefix: $arcsin$),
+  arccos: (prefix: $arccos$),
+  arctan: (prefix: $arctan$),
   call: (match: $parsely.slot("fn") parsely.tight (parsely.slot("args*"))$),
 
   delta: (prefix: $delta$, prec: 3),
   Delta: (prefix: $Delta$, prec: 3),
-  // arcsin: (match: $arcsin$),
-  // arccos: (match: $arccos$),
-  // arctan: (match: $arctan$),
-)
-
-#let inverse-operation = (
-  add: ("sub",),
-  sub: ("add",),
-  pos: ("pos",),
-  neg: ("neg",),
-  times: ("frac",),
-  dot: ("frac",),
-  mul: ("frac",),
-  group: ("",),
-  frac: ("mul",),
-  abs: ("",),
-  pow: ("root",),
-  root: ("pow",),
-  sqrt: ("pow", it => (args: operations.normalise-constant(2))),
-  call: ("",),
-
-  ln: "exp",
-  log: "pow",
-
-  // sin: ("arcsin",),
-  // cos: ("arccos",),
-  // tan: ("arctan",),
 )
 
 #let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
@@ -122,6 +98,16 @@
 }
 
 #let apply-operations((head, args, slots), vars) = {
+  if (head == "eq") {
+    if type(args.at(0)) == content and type(args.at(1)) == dictionary {
+      return args.at(1)
+    } else if type(args.at(1)) == content and type(args.at(0)) == dictionary {
+      return args.at(0)
+    } else {
+      panic("can't find equation branch to calculate")
+    }
+  }
+
   if head == "delta" {
     return resolve-leaf-node($delta-$ + args.first(), vars)
   } else if head == "Delta" {
@@ -149,7 +135,7 @@
   } else if head == "pow" {
     operations.pow(..args)
   } else if head == "exp" {
-    operations.exp(args)
+    operations.exp(args.first())
   } else if head == "group" {
     slots.expr
   } else if head == "root" {
@@ -166,7 +152,213 @@
     operations.cos(args.first())
   } else if head == "tan" {
     operations.tan(args.first())
+  } else if head == "asin" {
+    operations.asin(args.first())
+  } else if head == "acos" {
+    operations.acos(args.first())
+  } else if head == "atan" {
+    operations.atan(args.first())
   } else {
     panic(head)
   }
+}
+
+#let calculate-math(math) = calculate-tree.with(math-to-tree(math))
+
+#let invert(node, others, path) = {
+  let (head, args, slots) = node
+
+  if head == "add" or head == "pos" {
+    let (i, terms) = (path, args)
+    let siblings = terms.enumerate().filter(x => x.at(0) != i).map(x => x.at(1))
+    let new-others = others.map(o => (head: "sub", args: (o,) + siblings, slots: (:)))
+    return (new-others, terms.at(i))
+  }
+
+  if head == "sub" {
+    // flat args: (a, t1, t2, ...) representing a - t1 - t2 - ...
+    let (i, terms) = (path, args)
+    if i == 0 {
+      let new-others = others.map(o => (head: "add", args: (o,) + terms.slice(1), slots: (:)))
+      return (new-others, terms.at(0))
+    } else {
+      let a = terms.at(0)
+      let siblings = terms.slice(1).enumerate().filter(x => x.at(0) != i - 1).map(x => x.at(1))
+      let new-others = others.map(o => (head: "sub", args: (a, o) + siblings, slots: (:)))
+      return (new-others, terms.at(i))
+    }
+  }
+
+  if head == "neg" {
+    return (others.map(o => (head: "neg", args: (o,), slots: (:))), args.at(0))
+  }
+
+  if head in ("mul", "dot", "times") {
+    let (i, factors) = (path, args)
+    let siblings = factors.enumerate().filter(x => x.at(0) != i).map(x => x.at(1))
+    let sibling-tree = if siblings.len() == 1 { siblings.at(0) } else { (head: "mul", args: siblings, slots: (:)) }
+    let new-others = others.map(o => (head: "frac", args: (), slots: (num: o, denom: sibling-tree)))
+    return (new-others, factors.at(i))
+  }
+
+  if head == "frac" {
+    let (num, denom) = (slots.num, slots.denom)
+    if path == "num" {
+      return (others.map(o => (head: "mul", args: (o, denom), slots: (:))), num)
+    } else {
+      return (others.map(o => (head: "frac", args: (), slots: (num: num, denom: o))), denom)
+    }
+  }
+
+  if head == "pow" {
+    let (base, exponent) = (args.at(0), args.at(1))
+    if path == 0 {
+      let content-to-str = utility.to-str(exponent)
+      let number-match = content-to-str.match(valid-number-regex)
+      let new-others = if (
+        (number-match != none)
+          and (number-match.start == 0)
+          and (number-match.end == content-to-str.len())
+          and (calc.rem(float(number-match.text), 2) == 0)
+      ) {
+        others
+          .map(o => (
+            (head: "root", args: (), slots: (radicand: o, index: exponent)),
+            (head: "neg", args: ((head: "root", args: (), slots: (radicand: o, index: exponent)),), slots: (:)),
+          ))
+          .flatten()
+      } else {
+        others.map(o => (head: "root", args: (), slots: (radicand: o, index: exponent)))
+      }
+
+      return (new-others, base)
+    } else {
+      if utility.to-str(base) == "e" {
+        return (others.map(o => (head: "ln", args: (o,), slots: (:))), exponent)
+      }
+      return (others.map(o => (head: "log", args: (o,), slots: (base: base))), exponent)
+    }
+  }
+
+  if head == "root" {
+    let (radicand, index) = (slots.radicand, slots.index)
+    return (others.map(o => (head: "pow", args: (o, index), slots: (:))), radicand)
+  }
+
+  if head == "sqrt" {
+    let radicand = slots.radicand
+    let new-others = others
+      .map(o => (
+        (head: "pow", args: (o, [2]), slots: (:)),
+        (head: "pow", args: ((head: "neg", args: (o,), slots: (:)), [2]), slots: (:)),
+      ))
+      .flatten()
+    return (new-others, radicand)
+  }
+
+  if head in ("abs", "abs-bars") {
+    let value = slots.value
+    return (others.map(o => (o, (head: "neg", args: (o,), slots: (:)))).flatten(), value)
+  }
+
+  if head in ("log10", "log", "log-br", "log10-br") {
+    let value = args.at(0)
+    let base = slots.at("base", default: [10])
+    if path == "value" {
+      return (others.map(o => (head: "pow", args: (base, o), slots: (:))), value)
+    } else {
+      let new-others = others.map(o => (
+        head: "pow",
+        args: (value, (head: "frac", args: (), slots: (num: [1], denom: o))),
+        slots: (:),
+      ))
+      return (new-others, base)
+    }
+  }
+
+  if head == "ln" {
+    return (others.map(o => (head: "exp", args: (o,), slots: (:))), args.at(0))
+  }
+  if head == "exp" {
+    return (others.map(o => (head: "ln", args: (o,), slots: (:))), args.at(0))
+  }
+  if head == "sin" {
+    return (others.map(o => (head: "asin", args: (o,), slots: (:))), args.at(0))
+  }
+  if head == "cos" {
+    return (others.map(o => (head: "acos", args: (o,), slots: (:))), args.at(0))
+  }
+  if head == "tan" {
+    return (others.map(o => (head: "atan", args: (o,), slots: (:))), args.at(0))
+  }
+
+  if head == "group" {
+    // transparent wrapper — no algebra, just unwrap
+    return (others, slots.expr)
+  }
+
+  panic("isolate: no inverse defined for operation '" + head + "'")
+}
+
+#let children-of(node) = {
+  let (head, args, slots) = node
+  if head == "eq" {
+    return args.enumerate()
+  }
+  if head in ("add", "pos", "sub", "mul", "dot", "times") {
+    return args.enumerate()
+  }
+  if head in ("neg", "exp", "ln", "sin", "cos", "tan") {
+    return ((0, args.at(0)),)
+  }
+  if head in ("log10", "log", "log-br", "log10-br") {
+    let entries = (("value", args.at(0)),)
+    let base = slots.at("base", default: none)
+    if base != none { entries += (("base", base),) }
+    return entries
+  }
+  if head == "frac" {
+    return (("num", slots.num), ("denom", slots.denom))
+  }
+  if head in ("abs", "abs-bars") {
+    return (("value", slots.value),)
+  }
+  if head == "root" {
+    return (("radicand", slots.radicand), ("index", slots.index))
+  }
+  if head == "sqrt" {
+    return (("radicand", slots.radicand),)
+  }
+  if head == "pow" {
+    return args.enumerate()
+  }
+  if head == "group" {
+    return (("expr", slots.expr),)
+  }
+  panic("isolate: no argument layout defined for operation '" + head + "'")
+}
+
+// Recursively collects every path from `node` down to `var`.
+// Each path is an array of path-tokens (same tokens invert() already expects).
+#let find-paths-to-variable(node, var) = {
+  if type(node) != dictionary {
+    if node == var { return ((),) }
+    return ()
+  }
+  let results = ()
+  for (token, child) in children-of(node) {
+    for sub-path in find-paths-to-variable(child, var) {
+      results.push((token,) + sub-path)
+    }
+  }
+  return results
+}
+
+#let peel(expr, others, path, depth) = {
+  if path.len() == depth {
+    return others
+  }
+
+  let (new-others, sub-expr) = invert(expr, others, path.at(depth))
+  return peel(sub-expr, new-others, path, depth + 1)
 }

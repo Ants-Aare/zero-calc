@@ -321,10 +321,10 @@
 #let asin(value) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
-  assert(units.is-unitless(angle), message: "asin: value must not carry a unit.")
+  assert(units.is-unitless(value), message: "asin: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "asin: value must be in [-1, 1].")
 
-  let result = calc.asin(value-float)
+  let result = calc.asin(value-float) / 1deg
   let error = if value-uncertainty != none {
     value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
   }
@@ -343,10 +343,10 @@
 #let acos(value) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
-  assert(units.is-unitless(angle), message: "acos: value must not carry a unit.")
+  assert(units.is-unitless(value), message: "acos: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "acos: value must be in [-1, 1].")
 
-  let result = calc.acos(value-float)
+  let result = calc.acos(value-float) / 1deg
   // same magnitude as asin, just opposite sign in the derivative — squared away by rss
   let error = if value-uncertainty != none {
     value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
@@ -366,9 +366,9 @@
 #let atan(value) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
-  assert(units.is-unitless(angle), message: "atan: value must not carry a unit.")
+  assert(units.is-unitless(value), message: "atan: value must not carry a unit.")
 
-  let result = calc.atan(value-float)
+  let result = calc.atan(value-float) / 1deg
   let error = if value-uncertainty != none {
     value-uncertainty / (1 + calc.pow(value-float, 2))
   }

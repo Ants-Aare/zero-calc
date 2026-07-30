@@ -1,4 +1,4 @@
 #import "zcalc.typ"
-#import "function.typ"
+#import "equation.typ"
 #import "display.typ"
 #import "impl.typ"
