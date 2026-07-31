@@ -49,13 +49,9 @@
   Delta: (prefix: $Delta$, prec: 3),
 )
 
-#let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
-#let invisible-symbols = regex("[\)]")
-#let illegal-symbols = regex("[,. −\(]")
-
 #let resolve-leaf-node(it, vars) = {
   let content-to-str = utility.to-str(it)
-  let variable-name = content-to-str.replace(invisible-symbols, "").replace(illegal-symbols, "-")
+  let variable-name = content-to-str.replace(utility.invisible-symbols, "").replace(utility.illegal-symbols, "-")
   let variable = vars.at(variable-name, default: none)
   let quantity = if variable == none {
     if variable-name == "e" {
@@ -82,7 +78,7 @@
   }
 
   if (quantity == none) {
-    let number-match = content-to-str.match(valid-number-regex)
+    let number-match = content-to-str.match(utility.valid-number-regex)
     if (number-match != none) and (number-match.start == 0) and (number-match.end == content-to-str.len()) {
       quantity = operations.normalise-constant(content-to-str)
     }
@@ -214,7 +210,7 @@
     let (base, exponent) = (args.at(0), args.at(1))
     if path == 0 {
       let content-to-str = utility.to-str(exponent)
-      let number-match = content-to-str.match(valid-number-regex)
+      let number-match = content-to-str.match(utility.valid-number-regex)
       let new-others = if (
         (number-match != none)
           and (number-match.start == 0)

@@ -24,9 +24,9 @@
   }
 }
 
-#let calculate(math) = calculate-tree.with(to-tree(math))
+#let define(math) = calculate-tree.with(to-tree(math))
 
-#let isolate-variable(etree, var) = {
+#let isolate-variable(tree, var) = {
   if type(var) == content and var.func() == math.equation {
     var = var.body
   }

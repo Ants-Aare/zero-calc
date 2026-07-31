@@ -26,7 +26,7 @@
       target-e,
     ),
     unit: unit,
-    constant: terms.any(x => not x.at("constant", default: false)),
+    constant: terms.all(x => x.at("constant", default: false)),
     source: (op: "add", data: terms),
   )
 }
@@ -68,7 +68,7 @@
     round: as-round(term),
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
-    source: (op: "neg", data: term),
+    source: (op: "abs", data: term),
   )
 }
 
@@ -213,7 +213,7 @@
     ),
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
-    source: (op: "pow", data: (radicand, index)),
+    source: (op: "root", data: (radicand, index)),
   )
 }
 

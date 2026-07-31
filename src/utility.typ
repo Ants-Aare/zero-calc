@@ -2,6 +2,9 @@
 #import impl.utility: *
 
 #let typst-builtin-symbol = [--].func()
+#let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
+#let invisible-symbols = regex("[\)]")
+#let illegal-symbols = regex("[,. −\(]")
 
 #let symbol-names = (
   math.alpha: "alpha",
@@ -162,6 +165,9 @@
   let value-max-int = calc.max(..places.map(x => x.at(1)))
   let value-places = calc.max(value-min-frac, value-max-int)
   let uncertainty-places = calc.min(..places.map(x => x.at(2)))
+  if uncertainty-places < 900 {
+    value-places = uncertainty-places
+  }
   let round = (
     precision: value-places,
     mode: "places",

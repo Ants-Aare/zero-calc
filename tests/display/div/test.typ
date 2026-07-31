@@ -17,4 +17,4 @@
 
 #display.error(value)\
 #display.error-method(value)\
-#display.error-method-result(value, block: true)\
+#display.error-method-result(value, block: true)
