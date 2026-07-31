@@ -150,3 +150,154 @@
     ..args,
   )
 }
+
+// Lower = binds more loosely = more likely to need parens when nested
+// inside something tighter. Anything not in this table (frac, root, sqrt,
+// abs, pow, and all function calls) is self-delimiting — it visually
+// encloses its own children (fraction bar, radical sign, brackets,
+// superscript position), so it never needs parens from outside, and
+// never forces parens onto what's inside it either.
+#let prec-table = (add: 1, sub: 1, neg: 2, pos: 2, mul: 2.5, dot: 2.5, times: 2.5)
+#let prec(node) = if type(node) == dictionary { prec-table.at(node.head, default: 1000) } else { 1000 }
+
+
+
+// term-sign extraction: turns `neg(x)` into a "-" sign on x, and flags
+// add/sub subtrees that need explicit parens when subtracted (since
+// "a - (b + c)" != "a - b + c" once flattened into a token stream).
+#let signed-add-term(term) = {
+  if type(term) == dictionary and term.head == "neg" {
+    (sign: "-", node: term.args.at(0), force-parens: false)
+  } else {
+    (sign: "+", node: term, force-parens: false)
+  }
+}
+#let signed-sub-term(term) = {
+  if type(term) == dictionary and term.head == "neg" {
+    (sign: "+", node: term.args.at(0), force-parens: false)
+  } else if type(term) == dictionary and term.head in ("add", "sub") {
+    (sign: "-", node: term, force-parens: true)
+  } else {
+    (sign: "-", node: term, force-parens: false)
+  }
+}
+
+#let join-signed(first, rest) = {
+  let piece(t) = if t.force-parens { $(#display-equation(t.node))$ } else { wrap(t.node, 1) }
+  let out = if first.sign == "-" { $- #piece(first)$ } else { piece(first) }
+  for t in rest {
+    out = if t.sign == "-" { $#out - #piece(t)$ } else { $#out + #piece(t)$ }
+  }
+  out
+}
+
+#let fn-names = (asin: "arcsin", acos: "arccos", atan: "arctan")
+#let fn-call(head, value) = {
+  let arg = wrap(value, 0) // always parenthesize function args — simplest, unambiguous
+  if head in fn-names { $#math.op(fn-names.at(head))(arg)$ } else { $#math.op(head)(arg)$ }
+}
+
+#let display-equation(tree) = {
+  let wrap(node, min-prec) = {
+    let rendered = display-equation(node)
+    if prec(node) < min-prec { $(#rendered)$ } else { rendered }
+  }
+  if type(tree) == array { return tree.map(display-equation) }
+  if type(tree) != dictionary { return tree }
+
+  let head = tree.head
+  let args = tree.at("args", default: ())
+  let slots = tree.at("slots", default: (:))
+
+  if head == "eq" {
+    return $#display-equation(args.at(0)) = #display-equation(args.at(1))$
+  }
+
+  if head == "add" {
+    let terms = args.map(signed-add-term)
+    return join-signed(terms.first(), terms.slice(1))
+  }
+  if head == "sub" {
+    // args: (a, t1, t2, ...) meaning a - t1 - t2 - ...
+    let a = wrap(args.at(0), 1)
+    let terms = args.slice(1).map(signed-sub-term)
+    let out = a
+    for t in terms {
+      let piece = if t.force-parens { $(#display-equation(t.node))$ } else { wrap(t.node, 1) }
+      out = if t.sign == "-" { $#out - #piece$ } else { $#out + #piece$ }
+    }
+    return out
+  }
+  if head == "pos" {
+    return wrap(args.at(0), 2)
+  }
+  if head == "neg" {
+    let inner = args.at(0)
+    // double negative cancels
+    if type(inner) == dictionary and inner.head == "neg" {
+      return display-equation(inner.args.at(0))
+    }
+    return $- #wrap(inner, 2)$
+  }
+
+  if head in ("mul", "dot", "times") {
+    let sym = if head == "dot" { $dot$ } else { $times$ }
+    let pieces = args.map(f => wrap(f, 2.5))
+    let out = pieces.first()
+    for p in pieces.slice(1) { out = $#out #sym #p$ }
+    return out
+  }
+
+  if head == "frac" {
+    return $frac(#display-equation(slots.num), #display-equation(slots.denom))$
+  }
+
+  if head == "pow" {
+    let base = wrap(args.at(0), 4) // add/sub/neg/mul all need parens as a base
+    let exp = display-equation(args.at(1)) // superscript position groups it — no visible parens needed
+    return $#base^(#exp)$
+  }
+
+  if head == "root" {
+    let radicand = display-equation(slots.radicand)
+    if as-literal-int(slots.index) == 2 {
+      return $sqrt(#radicand)$
+    }
+    return $root(#display-equation(slots.index), #radicand)$
+  }
+  if head == "sqrt" {
+    return $sqrt(#display-equation(slots.radicand))$
+  }
+  if head in ("abs", "abs-bars") {
+    return $abs(#display-equation(slots.value))$
+  }
+
+  if head in ("log10", "log", "log-br", "log10-br") {
+    let value = display-equation(args.at(0))
+    let base = slots.at("base", default: none)
+    if base == none or as-literal-int(base) == 10 {
+      return $log(#value)$
+    }
+    if utility.to-str(base) == "e" {
+      return $ln(#value)$
+    }
+    return $log_(#display-equation(base))(#value)$
+  }
+  if head == "ln" {
+    return $ln(#display-equation(args.at(0)))$
+  }
+  if head == "exp" {
+    // exp(x) came from inverting pow(e, x) — display it that way, e^x is clearer than exp(x)
+    return $e^(#display-equation(args.at(0)))$
+  }
+
+  if head in ("sin", "cos", "tan", "asin", "acos", "atan") {
+    return fn-call(head, args.at(0))
+  }
+
+  if head == "group" {
+    return display-equation(slots.expr)
+  }
+
+  panic("display-equation: no rendering defined for operation '" + head + "'")
+}
