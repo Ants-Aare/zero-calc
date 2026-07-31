@@ -15,6 +15,7 @@ Basic math operations and equation formatting for [Typst](https://typst.app).
 <p align="center">
 <img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.6.2/tests/readme/ref/1.png" />
 </p>
+
 It's built directly on top of [Zero](https://typst.app/universe/package/zero) for number and quantity formatting, so make sure you use the same version number.
 
 ## Calculation History and Error Propagation
@@ -43,7 +44,7 @@ You can use the results of operations to do further calculations. Every `zcalc` 
 <img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.6.2/tests/readme/ref/3.png" />
 </p>
 
-Beyond basic arithmetic, **Zero-calc** also understands typst equations using [Parsely](https://typst.app/universe/package/parsely/). Define equations once and call them by giving the necessary parameters.
+Beyond basic arithmetic, **Zero-calc** also understands typst equations using [Parsely](https://typst.app/universe/package/parsely). Define equations once and call them by giving the necessary parameters.
 
 ## Modifying Equation Trees and Isolating Variables
 ```typst
