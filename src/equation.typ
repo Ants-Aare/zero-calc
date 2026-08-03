@@ -20,6 +20,7 @@
       tree,
       post: it => arithmetic.apply-operations(it, values.named()),
     )
+    result.args = values
     utility.display(result)
   }
 }

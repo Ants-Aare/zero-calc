@@ -151,8 +151,18 @@
     let value-frac = info.frac.len()
     let uncertainty = if info.pm != none { info.pm.at(1).len() } else { 1000 }
     if round != none {
-      value-frac = round.at("precision", default: value-frac)
-      uncertainty = round.at("uncertainty-precision", default: uncertainty)
+      if round.at("mode", default: none) == "figures" {
+        let intcount = info.int.trim("0", at: start).len()
+        value-frac = round.precision - intcount
+
+        if info.pm != none {
+          let error-intcount = info.pm.at(0).trim("0", at: start).len()
+          uncertainty = round.at("uncertainty-precision", default: round.precision) - error-intcount
+        }
+      } else {
+        value-frac = round.at("precision", default: value-frac)
+        uncertainty = round.at("uncertainty-precision", default: uncertainty)
+      }
     }
     return (
       (target-e - e) + value-frac,
@@ -187,8 +197,19 @@
     let value = (info.int + info.frac).trim("0", at: start).len()
     let uncertainty = if info.pm != none { (info.pm.at(0) + info.pm.at(1)).trim("0", at: start).len() } else { int.max }
     if round != none {
-      value = round.at("precision", default: value)
-      uncertainty = round.at("uncertainty-precision", default: uncertainty)
+      if round.at("mode", default: none) == "places" {
+        value = (info.int).trim("0", at: start).len() + round.precision
+        if info.pm != none {
+          uncertainty = (
+            info.pm.at(0) + info.pm.at(1).slice(0, count: round.at("uncertainty-precision", default: round.precision))
+          )
+            .trim("0")
+            .len()
+        }
+      } else {
+        value = round.at("precision", default: value)
+        uncertainty = round.at("uncertainty-precision", default: uncertainty)
+      }
     }
     return (value, uncertainty)
   })

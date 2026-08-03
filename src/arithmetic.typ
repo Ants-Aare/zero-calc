@@ -17,7 +17,7 @@
 
   group: (match: $(parsely.slot("expr*"))$),
   frac: (match: math.frac),
-  abs: (match: math.abs),
+  abs: (match: $abs(parsely.slot("value"))$),
   abs-bars: (match: $|parsely.slot("value")|$),
 
   pow: (
