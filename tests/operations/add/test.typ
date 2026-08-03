@@ -41,3 +41,28 @@
 #z
 #assert(impl.utility.retrieve-metadata(z).float == calc.pi + calc.e + 1)
 #assert(impl.utility.retrieve-metadata(z).uncertainty == 0.2011345818102894)
+
+#pagebreak()
+#zcalc.mul(zcalc.add("3", "4"), "5")\
+#zcalc.mul(zcalc.add("3", "4"), "5+-0.1")\
+#zcalc.mul(zcalc.add("3.0", "4.0"), "5.0")\
+#zcalc.mul(zcalc.add("3", "4.0"), "5.0")\
+#zcalc.mul(zcalc.add("3+-0.3", "4+-0.4"), "5")\
+#zcalc.mul(zcalc.add("3+-0.7", "4+-0.7"), "5+-0.45")\
+#zcalc.mul(zcalc.add("3e3", "4e2"), "5.0e1")\
+#pagebreak()
+
+#zcalc.add(zcalc.mul("3", "4"), "5")\
+#zcalc.add(zcalc.mul("3", "4"), "5+-0.1")\
+// #zcalc.mul("3+-0.3", "4+-0.4")\
+// #zcalc.mul("3", "4")
+// #zcalc.mul("3.0", "4.0")
+// #zcalc.mul("3", "4.0")
+// #zcalc.mul("3+-1", "4+-1")
+// #zcalc.mul("3e3", "4e2")
+#zcalc.add(zcalc.mul("3.0", "4.0"), "5.0")\
+#zcalc.add(zcalc.mul("3", "4.0"), "5.0")\
+#zcalc.add(zcalc.mul("3+-0.3", "4+-0.4"), "5")\
+#zcalc.add(zcalc.mul("3+-1", "4+-1"), "5+-0.99")\
+#zcalc.add(zcalc.mul("3e3", "4e2"), "5.0e1")\
+

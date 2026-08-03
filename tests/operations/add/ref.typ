@@ -1,4 +1,5 @@
 #import "/src/lib/zero/src/zero.typ": *
+#import "/src/lib.typ": *
 #set page(width: auto, height: auto, margin: .5em)
 #let m = zi.meter.with(exponent: "eng")
 
@@ -35,3 +36,22 @@
 #pagebreak()
 #num[#(calc.pi + calc.e)+-0.1745]\
 #num[#(calc.pi + calc.e + 1)+-0.2]
+#pagebreak()
+
+#zcalc.mul("7", "5")\
+#zcalc.mul("7", "5+-0.1")\
+#zcalc.mul("7.0", "5.0")\
+#zcalc.mul("7", "5.0")\
+#zcalc.mul("7+-0.5", "5")\
+#zcalc.mul("7+-1", "5+-0.45")\
+#zcalc.mul("3.4e3", "5.0e1")\
+
+#pagebreak()
+
+#zcalc.add("12", "5")\
+#zcalc.add("12", "5+-0.1")\
+#zcalc.add("12", "5.0")\
+#zcalc.add("12", "5.0")\
+#zcalc.add("12+-2", "5")\
+#zcalc.add("12+-5", "5+-0.99")\
+#zcalc.add("1.2e6", "5.0e1")\

@@ -1,5 +1,6 @@
 #import "/src/lib/zero/src/zero.typ": *
 #import "/src/lib.typ": *
+#import "@preview/parsely:0.1.1"
 #set page(width: auto, height: auto, margin: .5em)
 
 #let eq = $x = log(a^4)$
@@ -12,4 +13,4 @@
 #eq
 #let tree = equation.to-tree(eq)
 
-#display.display-equation(tree)
+#display.equation(tree)

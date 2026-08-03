@@ -32,7 +32,7 @@ $
 
 #let kinetic-energy-tree = equation.to-tree(kinetic-energy-math)
 #let velocity-tree = equation.isolate-variable(kinetic-energy-tree, $v$)
-#math.equation(display.display-equation(velocity-tree.first()), block: true)
+#math.equation(display.equation(velocity-tree.first()), block: true)
 
 #equation.calculate-tree(velocity-tree, m: g[10], Ekin: g-m2-s-2[180])
 
