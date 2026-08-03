@@ -12,17 +12,17 @@
 #let inf = const(calc.inf)
 
 
-#let add(..terms) = {
-  let datas = utility.normalise-quantities(terms.pos(), apply-unit: true)
+#let add(..summands) = {
+  let datas = utility.normalise-quantities(summands.pos(), apply-unit: true)
   let result = operations.add(datas)
-  result += (args: arguments(..(terms.named() + datas.first().args.named())))
+  result += (args: arguments(..(summands.named() + datas.first().args.named())))
   return utility.display(result)
 }
 
-#let sub(a, ..terms) = {
-  let datas = utility.normalise-quantities((a,) + terms.pos(), apply-unit: true)
+#let sub(minuend, ..subtrahends) = {
+  let datas = utility.normalise-quantities((minuend,) + subtrahends.pos(), apply-unit: true)
   let result = operations.sub(datas.first(), datas.slice(1))
-  result += (args: arguments(..(terms.named() + datas.first().args.named())))
+  result += (args: arguments(..(subtrahends.named() + datas.first().args.named())))
   return utility.display(result)
 }
 
@@ -39,10 +39,10 @@
   return utility.display(result)
 }
 
-#let mul(..terms) = {
-  let datas = utility.normalise-quantities(terms.pos())
+#let mul(..factors) = {
+  let datas = utility.normalise-quantities(factors.pos())
   let result = operations.mul(datas)
-  result += (args: arguments(..(terms.named() + datas.first().args.named())))
+  result += (args: arguments(..(factors.named() + datas.first().args.named())))
   return utility.display(result)
 }
 
@@ -53,16 +53,16 @@
   return utility.display(result)
 }
 
-#let pow(base, exp, ..args) = {
-  let (base, exp) = utility.normalise-quantities((base, exp))
-  let result = operations.pow(base, exp)
+#let pow(base, exponent, ..args) = {
+  let (base, exponent) = utility.normalise-quantities((base, exponent))
+  let result = operations.pow(base, exponent)
   result += (args: arguments(..(args.named() + base.args.named())))
   return utility.display(result)
 }
-#let exp(exp, ..args) = {
-  let exp = utility.normalise-quantity(exp)
-  let result = operations.exp(exp)
-  result += (args: arguments(..(args.named() + exp.args.named())))
+#let exp(exponent, ..args) = {
+  let exponent = utility.normalise-quantity(exponent)
+  let result = operations.exp(exponent)
+  result += (args: arguments(..(args.named() + exponent.args.named())))
   return utility.display(result)
 }
 

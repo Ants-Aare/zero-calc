@@ -312,7 +312,7 @@
 }
 
 #let join-signed(first, rest) = {
-  let piece(t) = if t.force-parens { $(#display-equation(t.node))$ } else { wrap(t.node, 1) }
+  let piece(t) = if t.force-parens { $(#equation(t.node))$ } else { wrap(t.node, 1) }
   let out = if first.sign == "-" { $- #piece(first)$ } else { piece(first) }
   for t in rest {
     out = if t.sign == "-" { $#out - #piece(t)$ } else { $#out + #piece(t)$ }
@@ -326,12 +326,12 @@
   if head in fn-names { $#math.op(fn-names.at(head))(arg)$ } else { $#math.op(head)(arg)$ }
 }
 
-#let display-equation(tree) = {
+#let equation(tree) = {
   let wrap(node, min-prec) = {
-    let rendered = display-equation(node)
+    let rendered = equation(node)
     if prec(node) < min-prec { $(#rendered)$ } else { rendered }
   }
-  if type(tree) == array { return tree.map(display-equation) }
+  if type(tree) == array { return tree.map(equation) }
   if type(tree) != dictionary { return tree }
 
   let head = tree.head
@@ -339,7 +339,7 @@
   let slots = tree.at("slots", default: (:))
 
   if head == "eq" {
-    return $#display-equation(args.at(0)) = #display-equation(args.at(1))$
+    return $#equation(args.at(0)) = #equation(args.at(1))$
   }
 
   if head == "add" {
@@ -352,7 +352,7 @@
     let terms = args.slice(1).map(signed-sub-term)
     let out = a
     for t in terms {
-      let piece = if t.force-parens { $(#display-equation(t.node))$ } else { wrap(t.node, 1) }
+      let piece = if t.force-parens { $(#equation(t.node))$ } else { wrap(t.node, 1) }
       out = if t.sign == "-" { $#out - #piece$ } else { $#out + #piece$ }
     }
     return out
@@ -364,7 +364,7 @@
     let inner = args.at(0)
     // double negative cancels
     if type(inner) == dictionary and inner.head == "neg" {
-      return display-equation(inner.args.at(0))
+      return equation(inner.args.at(0))
     }
     return $- #wrap(inner, 2)$
   }
@@ -378,33 +378,33 @@
   }
 
   if head == "frac" {
-    return $frac(#display-equation(slots.num), #display-equation(slots.denom))$
+    return $frac(#equation(slots.num), #equation(slots.denom))$
   }
 
   if head == "pow" {
     let base = wrap(args.at(0), 4) // add/sub/neg/mul all need parens as a base
-    let exp = display-equation(args.at(1)) // superscript position groups it — no visible parens needed
+    let exp = equation(args.at(1)) // superscript position groups it — no visible parens needed
     return $#base^(#exp)$
   }
 
   if head == "root" {
-    let radicand = display-equation(slots.radicand)
+    let radicand = equation(slots.radicand)
     let content-to-str = utility.to-str(slots.index)
     let number-match = content-to-str.match(utility.valid-number-regex)
     if float(number-match.text) == 2 {
       return $sqrt(#radicand)$
     }
-    return $root(#display-equation(slots.index), #radicand)$
+    return $root(#equation(slots.index), #radicand)$
   }
   if head == "sqrt" {
-    return $sqrt(#display-equation(slots.radicand))$
+    return $sqrt(#equation(slots.radicand))$
   }
   if head in ("abs", "abs-bars") {
-    return $abs(#display-equation(slots.value))$
+    return $abs(#equation(slots.value))$
   }
 
   if head in ("log10", "log", "log-br", "log10-br") {
-    let value = display-equation(args.at(0))
+    let value = equation(args.at(0))
     let base = slots.at("base", default: none)
     if base == none or as-literal-int(base) == 10 {
       return $log(#value)$
@@ -412,14 +412,14 @@
     if utility.to-str(base) == "e" {
       return $ln(#value)$
     }
-    return $log_(#display-equation(base))(#value)$
+    return $log_(#equation(base))(#value)$
   }
   if head == "ln" {
-    return $ln(#display-equation(args.at(0)))$
+    return $ln(#equation(args.at(0)))$
   }
   if head == "exp" {
     // exp(x) came from inverting pow(e, x) — display it that way, e^x is clearer than exp(x)
-    return $e^(#display-equation(args.at(0)))$
+    return $e^(#equation(args.at(0)))$
   }
 
   if head in ("sin", "cos", "tan", "asin", "acos", "atan") {
@@ -427,8 +427,8 @@
   }
 
   if head == "group" {
-    return display-equation(slots.expr)
+    return equation(slots.expr)
   }
 
-  panic("display-equation: no rendering defined for operation '" + head + "'")
+  panic("equation: no rendering defined for operation '" + head + "'")
 }
