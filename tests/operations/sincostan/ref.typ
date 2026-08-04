@@ -11,3 +11,7 @@
 #num(calc.cos(1rad), round: (precision: 1))\
 #num(calc.cos(3600deg / 60), round: (precision: 2))\
 #num(calc.cos(210000deg / 60 / 60), round: (precision: 2))
+
+#zi.degree(60)\
+#zi.degree(30)\
+#zi.degree(30)\

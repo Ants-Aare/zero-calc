@@ -17,4 +17,6 @@
 #zcalc.cos(arcminute("3.6e3"))\
 #zcalc.cos(arcsecond("2.1e5"))\
 
-#zcalc.acos("0.5")
+#zcalc.acos("0.5")\
+#zcalc.asin("0.5")\
+#zcalc.atan("0.5")\

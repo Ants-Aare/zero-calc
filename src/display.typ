@@ -280,20 +280,9 @@
   )
 }
 
-// Lower = binds more loosely = more likely to need parens when nested
-// inside something tighter. Anything not in this table (frac, root, sqrt,
-// abs, pow, and all function calls) is self-delimiting — it visually
-// encloses its own children (fraction bar, radical sign, brackets,
-// superscript position), so it never needs parens from outside, and
-// never forces parens onto what's inside it either.
 #let prec-table = (add: 1, sub: 1, neg: 2, pos: 2, mul: 2.5, dot: 2.5, times: 2.5)
 #let prec(node) = if type(node) == dictionary { prec-table.at(node.head, default: 1000) } else { 1000 }
 
-
-
-// term-sign extraction: turns `neg(x)` into a "-" sign on x, and flags
-// add/sub subtrees that need explicit parens when subtracted (since
-// "a - (b + c)" != "a - b + c" once flattened into a token stream).
 #let signed-add-term(term) = {
   if type(term) == dictionary and term.head == "neg" {
     (sign: "-", node: term.args.at(0), force-parens: false)
@@ -322,7 +311,7 @@
 
 #let fn-names = (asin: "arcsin", acos: "arccos", atan: "arctan")
 #let fn-call(head, value) = {
-  let arg = wrap(value, 0) // always parenthesize function args — simplest, unambiguous
+  let arg = wrap(value, 0)
   if head in fn-names { $#math.op(fn-names.at(head))(arg)$ } else { $#math.op(head)(arg)$ }
 }
 
@@ -347,7 +336,6 @@
     return join-signed(terms.first(), terms.slice(1))
   }
   if head == "sub" {
-    // args: (a, t1, t2, ...) meaning a - t1 - t2 - ...
     let a = wrap(args.at(0), 1)
     let terms = args.slice(1).map(signed-sub-term)
     let out = a
@@ -362,7 +350,6 @@
   }
   if head == "neg" {
     let inner = args.at(0)
-    // double negative cancels
     if type(inner) == dictionary and inner.head == "neg" {
       return equation(inner.args.at(0))
     }
@@ -382,8 +369,8 @@
   }
 
   if head == "pow" {
-    let base = wrap(args.at(0), 4) // add/sub/neg/mul all need parens as a base
-    let exp = equation(args.at(1)) // superscript position groups it — no visible parens needed
+    let base = wrap(args.at(0), 4)
+    let exp = equation(args.at(1))
     return $#base^(#exp)$
   }
 
@@ -418,7 +405,6 @@
     return $ln(#equation(args.at(0)))$
   }
   if head == "exp" {
-    // exp(x) came from inverting pow(e, x) — display it that way, e^x is clearer than exp(x)
     return $e^(#equation(args.at(0)))$
   }
 

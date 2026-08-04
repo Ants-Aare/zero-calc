@@ -2,7 +2,6 @@
 #import "utility.typ"
 #import "operations.typ"
 
-// based on parsely.common.arithmetic
 #let grammar = (
   eq: (infix: $=$, prec: 0),
 
@@ -172,7 +171,6 @@
   }
 
   if head == "sub" {
-    // flat args: (a, t1, t2, ...) representing a - t1 - t2 - ...
     let (i, terms) = (path, args)
     if i == 0 {
       let new-others = others.map(o => (head: "add", args: (o,) + terms.slice(1), slots: (:)))
@@ -289,7 +287,6 @@
   }
 
   if head == "group" {
-    // transparent wrapper — no algebra, just unwrap
     return (others, slots.expr)
   }
 
@@ -334,8 +331,6 @@
   panic("isolate: no argument layout defined for operation '" + head + "'")
 }
 
-// Recursively collects every path from `node` down to `var`.
-// Each path is an array of path-tokens (same tokens invert() already expects).
 #let find-paths-to-variable(node, var) = {
   if type(node) != dictionary {
     if node == var { return ((),) }

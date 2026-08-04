@@ -233,7 +233,6 @@
   impl.rounding.assert-option(mode, "e mode", ("highest", "lowest", "value"))
   let e = if mode == "value" {
     let e = get-value-e(value)
-    // don't display 16 as 1.6e1
     if e == 1 {
       e = 0
     }
