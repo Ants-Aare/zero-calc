@@ -45,7 +45,6 @@
   return result
 }
 
-//negates a term
 #let neg(term) = {
   term.info.sign = if term.info.sign == "-" { "+" } else { "-" }
   return (
@@ -258,7 +257,6 @@
 
 #let ln(value) = log(value, e)
 
-//TODO: detect rad /degree/ arcsecond etc and convert them to the proper value
 #let sin(angle) = {
   let angle-float = as-float(angle)
   let angle-uncertainty = as-uncertainty(angle)
@@ -375,13 +373,24 @@
   )
 }
 
-#let asin(value) = {
+#let asin(value, unit: sym.degree) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
   assert(units.is-unitless(value), message: "asin: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "asin: value must be in [-1, 1].")
 
-  let result = calc.asin(value-float) / 1deg
+  let unit-divider = if unit == sym.degree {
+    1deg
+  } else if unit == "rad" {
+    1rad
+  } else if unit == sym.prime {
+    1deg / 60
+  } else if unit == sym.prime.double {
+    1deg / 360
+  } else {
+    1deg
+  }
+  let result = calc.asin(value-float) / unit-divider
   let error = if value-uncertainty != none {
     value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
   }
@@ -392,20 +401,29 @@
     uncertainty: error,
     info: create-info(result, error, target-e),
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    unit: (numerator: ((symbol("°"), "1"),), denominator: ()),
+    unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (op: "asin", data: value),
   )
 }
 
-#let acos(value) = {
+#let acos(value, unit: sym.degree) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
   assert(units.is-unitless(value), message: "acos: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "acos: value must be in [-1, 1].")
-
-  let result = calc.acos(value-float) / 1deg
-  // same magnitude as asin, just opposite sign in the derivative — squared away by rss
+  let unit-divider = if unit == sym.degree {
+    1deg
+  } else if unit == "rad" {
+    1rad
+  } else if unit == sym.prime {
+    1deg / 60
+  } else if unit == sym.prime.double {
+    1deg / 360
+  } else {
+    1deg
+  }
+  let result = calc.acos(value-float) / unit-divider
   let error = if value-uncertainty != none {
     value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
   }
@@ -416,18 +434,29 @@
     uncertainty: error,
     info: create-info(result, error, target-e),
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    unit: (numerator: ((symbol("°"), "1"),), denominator: ()),
+    unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (op: "acos", data: value),
   )
 }
 
-#let atan(value) = {
+#let atan(value, unit: sym.degree) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
   assert(units.is-unitless(value), message: "atan: value must not carry a unit.")
 
-  let result = calc.atan(value-float) / 1deg
+  let unit-divider = if unit == sym.degree {
+    1deg
+  } else if unit == "rad" {
+    1rad
+  } else if unit == sym.prime {
+    1deg / 60
+  } else if unit == sym.prime.double {
+    1deg / 360
+  } else {
+    1deg
+  }
+  let result = calc.atan(value-float) / unit-divider
   let error = if value-uncertainty != none {
     value-uncertainty / (1 + calc.pow(value-float, 2))
   }
@@ -438,7 +467,7 @@
     uncertainty: error,
     info: create-info(result, error, target-e),
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    unit: (numerator: ((symbol("°"), "1"),), denominator: ()),
+    unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (op: "atan", data: value),
   )

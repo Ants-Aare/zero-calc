@@ -113,21 +113,21 @@
   return utility.display(result)
 }
 
-#let asin(value, ..args) = {
+#let asin(value, unit: sym.degree, ..args) = {
   let value = utility.normalise-quantity(value)
-  let result = operations.asin(value)
+  let result = operations.asin(value, unit: unit)
   result += (args: arguments(..(args.named() + value.args.named())))
   return utility.display(result)
 }
-#let acos(value, ..args) = {
+#let acos(value, unit: sym.degree, ..args) = {
   let value = utility.normalise-quantity(value)
-  let result = operations.acos(value)
+  let result = operations.acos(value, unit: unit)
   result += (args: arguments(..(args.named() + value.args.named())))
   return utility.display(result)
 }
-#let atan(value, ..args) = {
+#let atan(value, unit: sym.degree, ..args) = {
   let value = utility.normalise-quantity(value)
-  let result = operations.atan(value)
+  let result = operations.atan(value, unit: unit)
   result += (args: arguments(..(args.named() + value.args.named())))
   return utility.display(result)
 }
