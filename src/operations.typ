@@ -262,7 +262,26 @@
 #let sin(angle) = {
   let angle-float = as-float(angle)
   let angle-uncertainty = as-uncertainty(angle)
-  assert(units.is-unitless(angle), message: "sin: angle must not carry a unit (radians assumed).")
+  assert(
+    units.is-unitless(angle)
+      or (
+        angle.unit.numerator.at(0).at(0) in (sym.degree, "rad", sym.prime.double, sym.prime)
+          and angle.unit.denominator.len() == 0
+      ),
+    message: "sin: angle must not carry a unit (radians assumed).",
+  )
+  if angle.at("unit", default: none) != none {
+    let unit = angle.unit.numerator.at(0).at(0)
+    if unit == sym.degree {
+      angle-float *= 1deg
+    } else if unit == sym.prime {
+      angle-float = (angle-float / 60) * 1deg
+    } else if unit == sym.prime.double {
+      angle-float = angle-float / 3600 * 1deg
+    } else if unit == "rad" {
+      angle-float = angle-float * 1rad
+    }
+  }
 
   let result = calc.sin(angle-float)
   let error = if angle-uncertainty != none { calc.abs(calc.cos(angle-float)) * angle-uncertainty }
@@ -281,7 +300,26 @@
 #let cos(angle) = {
   let angle-float = as-float(angle)
   let angle-uncertainty = as-uncertainty(angle)
-  assert(units.is-unitless(angle), message: "cos: angle must not carry a unit (radians assumed).")
+  assert(
+    units.is-unitless(angle)
+      or (
+        angle.unit.numerator.at(0).at(0) in (sym.degree, "rad", sym.prime.double, sym.prime)
+          and angle.unit.denominator.len() == 0
+      ),
+    message: "sin: angle must not carry a unit (radians assumed).",
+  )
+  if angle.at("unit", default: none) != none {
+    let unit = angle.unit.numerator.at(0).at(0)
+    if unit == sym.degree {
+      angle-float *= 1deg
+    } else if unit == sym.prime {
+      angle-float = (angle-float / 60) * 1deg
+    } else if unit == sym.prime.double {
+      angle-float = angle-float / 3600 * 1deg
+    } else if unit == "rad" {
+      angle-float = angle-float * 1rad
+    }
+  }
 
   let result = calc.cos(angle-float)
   let error = if angle-uncertainty != none { calc.abs(calc.sin(angle-float)) * angle-uncertainty }
@@ -300,7 +338,26 @@
 #let tan(angle) = {
   let angle-float = as-float(angle)
   let angle-uncertainty = as-uncertainty(angle)
-  assert(units.is-unitless(angle), message: "tan: angle must not carry a unit (radians assumed).")
+  assert(
+    units.is-unitless(angle)
+      or (
+        angle.unit.numerator.at(0).at(0) in (sym.degree, "rad", sym.prime.double, sym.prime)
+          and angle.unit.denominator.len() == 0
+      ),
+    message: "sin: angle must not carry a unit (radians assumed).",
+  )
+  if angle.at("unit", default: none) != none {
+    let unit = angle.unit.numerator.at(0).at(0)
+    if unit == sym.degree {
+      angle-float *= 1deg
+    } else if unit == sym.prime {
+      angle-float = (angle-float / 60) * 1deg
+    } else if unit == sym.prime.double {
+      angle-float = angle-float / 3600 * 1deg
+    } else if unit == "rad" {
+      angle-float = angle-float * 1rad
+    }
+  }
 
   let result = calc.tan(angle-float)
   let error = if angle-uncertainty != none {
@@ -335,6 +392,7 @@
     uncertainty: error,
     info: create-info(result, error, target-e),
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    unit: (numerator: ((symbol("°"), "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (op: "asin", data: value),
   )
@@ -358,6 +416,7 @@
     uncertainty: error,
     info: create-info(result, error, target-e),
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    unit: (numerator: ((symbol("°"), "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (op: "acos", data: value),
   )
@@ -379,6 +438,7 @@
     uncertainty: error,
     info: create-info(result, error, target-e),
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    unit: (numerator: ((symbol("°"), "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (op: "atan", data: value),
   )

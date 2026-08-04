@@ -9,13 +9,13 @@ It's built directly on top of [Zero](https://typst.app/universe/package/zero), s
 The zcalc namespace can replace regular calc function calls in most cases. Use zero quantities or numbers to perform calculations or pass in floats, strings or content, which will be parsed using zero. The units are automatically adapt and uncertainties will be combined properly.
 
 ```typst
-#import "@preview/zero:0.6.2": *
-#import "@preview/zero-calc:0.6.2": *
+#import "@preview/zero:0.7.0": *
+#import "@preview/zero-calc:0.7.0": *
 #zcalc.div(m[30+-0.3], s[5+-0.4])
 ```
 
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.6.2/tests/readme/ref/1.png" />
+<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/1.png" />
 </p>
 
 ## Calculation History and Error Propagation
@@ -29,7 +29,7 @@ You can use the results of operations to do further calculations. Every `zcalc` 
 #display.error-method-result(value)
 ```
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.6.2/tests/readme/ref/2.png" />
+<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/2.png" />
 </p>
 If you don't want a variable to be considered in the error and sigfigs calcullation, then you can declare it as a constant by using `zcalc.const`.
 
@@ -45,7 +45,7 @@ Beyond basic arithmetic, **Zero-Calc** also understands math equations by using 
 #display.method-result(value)
 ```
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.6.2/tests/readme/ref/3.png" />
+<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/3.png" />
 </p>
 
 ## Modifying Equation Trees and Isolating Variables
@@ -55,12 +55,12 @@ You can parse a math equation into a tree and even isolate a variable (for simpl
 #let kinetic-energy-tree = equation.to-tree(kinetic-energy-math)
 #let velocity-tree = equation.isolate-variable(kinetic-energy-tree, $v$)
 
-#display.display-equation(velocity-tree.first())
+#display.equation(velocity-tree.first())
 #equation.calculate-tree(velocity-tree, m: g[10], Ekin: g-m2-s-2[180])
 
 ```
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.6.2/tests/readme/ref/4.png" />
+<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/4.png" />
 </p>
 
 ## List of supported operations
