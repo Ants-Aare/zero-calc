@@ -1,7 +1,7 @@
 #import "@preview/parsely:0.1.1"
 #import "arithmetic.typ"
 #import "utility.typ"
-#import "/src/lib/zero/src/zero.typ"
+#import "lib/zero/src/zero.typ"
 
 #let to-tree(math) = {
   let (tree, rest) = parsely.parse(math, arithmetic.grammar)
