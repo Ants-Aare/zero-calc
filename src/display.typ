@@ -5,7 +5,7 @@
 #let _method-prec(value) = {
   let op = value.at("source", default: none)
   if op == none { return 1000 }
-  _method-prec-table.at(op.op, default: 1000)
+  _method-prec-table.at(op.head, default: 1000)
 }
 
 #let variable(value, show-error: true) = {
@@ -37,78 +37,97 @@
   utility.display(value)
 }
 
-
-#let method(value, show-error: false) = {
-  let _method-wrap(value, min-prec, show-error: false) = {
-    let rendered = method(value, show-error: show-error)
+#let method(value, show-error: false, depth: none, frozen: false) = {
+  let _method-wrap(value, min-prec, show-error: false, depth: none, frozen: false) = {
+    let rendered = method(value, show-error: show-error, depth: depth, frozen: frozen)
     if _method-prec(value) < min-prec { $(#rendered)$ } else { rendered }
   }
   value = utility.normalise-quantity(value)
-  if value.at("source", default: none) != none {
-    let operation = value.source.op
+
+  let is-boundary = value.at("boundary", default: false)
+  let free = frozen and not is-boundary
+  let expand = value.at("source", default: none) != none and (free or depth == none or depth > 0)
+
+  let child-depth = if depth == none {
+    none
+  } else if free {
+    depth
+  } else {
+    depth - 1
+  }
+  let child-frozen = frozen or is-boundary
+
+  if expand {
+    let operation = value.source.head
     if operation == "add" {
-      $#value.source.data.map(x => _method-wrap(x, 1, show-error: show-error)).join($+$)$
+      $#value.source.data.map(x => _method-wrap(x, 1, show-error: show-error, depth: child-depth, frozen: child-frozen)).join($+$)$
     } else if operation == "sub" {
       let (a, terms) = value.source.data
-      let rest = terms.map(t => $- #_method-wrap(t, 2, show-error: show-error)$).join()
-      $#_method-wrap(a, 1, show-error: show-error) #rest$
+      let rest = terms
+        .map(t => $- #_method-wrap(t, 2, show-error: show-error, depth: child-depth, frozen: child-frozen)$)
+        .join()
+      $#_method-wrap(a, 1, show-error: show-error, depth: child-depth, frozen: child-frozen) #rest$
     } else if operation == "neg" {
-      $- #_method-wrap(value.source.data, 2, show-error: show-error)$
+      $- #_method-wrap(value.source.data, 2, show-error: show-error, depth: child-depth, frozen: child-frozen)$
     } else if operation == "abs" {
-      $abs(#method(value.source.data, show-error: show-error))$
+      $abs(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
     } else if operation == "mul" {
       context {
         let product = zero.impl.num-state.get().product
-        $#value.source.data.map(x => _method-wrap(x, 2.5, show-error: show-error)).join(product)$
+        $#value.source.data.map(x => _method-wrap(x, 2.5, show-error: show-error, depth: child-depth, frozen: child-frozen)).join(product)$
       }
     } else if operation == "div" {
-      let values = value.source.data.map(x => method(x, show-error: show-error))
+      let values = value.source.data.map(x => method(
+        x,
+        show-error: show-error,
+        depth: child-depth,
+        frozen: child-frozen,
+      ))
       $#values.at(0)/#values.at(1)$
     } else if operation == "pow" {
       let (base, exponent) = value.source.data
       if utility.as-float(base) == calc.e {
-        $e^(#method(exponent, show-error: show-error))$
+        $e^(#method(exponent, show-error: show-error, depth: child-depth, frozen: child-frozen))$
       } else {
-        $#_method-wrap(base, 3, show-error: show-error)^(#method(exponent, show-error: show-error))$
+        $#_method-wrap(base, 3, show-error: show-error, depth: child-depth, frozen: child-frozen)^(#method(exponent, show-error: show-error, depth: child-depth, frozen: child-frozen))$
       }
     } else if operation == "root" {
       let (radicand, index) = value.source.data
       if utility.as-float(index) == 2 {
-        $sqrt(#method(radicand, show-error: show-error))$
+        $sqrt(#method(radicand, show-error: show-error, depth: child-depth, frozen: child-frozen))$
       } else {
-        $root(#method(index, show-error: show-error), #method(radicand, show-error: show-error))$
+        $root(#method(index, show-error: show-error, depth: child-depth, frozen: child-frozen), #method(radicand, show-error: show-error, depth: child-depth, frozen: child-frozen))$
       }
     } else if operation == "log" {
       let (val, base) = value.source.data
       if utility.as-float(base) == calc.e {
-        $ln(#method(val, show-error: show-error))$
+        $ln(#method(val, show-error: show-error, depth: child-depth, frozen: child-frozen))$
       } else {
-        $log_(#method(base, show-error: show-error))(#method(val, show-error: show-error))$
+        $log_(#method(base, show-error: show-error, depth: child-depth, frozen: child-frozen))(#method(val, show-error: show-error, depth: child-depth, frozen: child-frozen))$
       }
     } else if operation == "sin" {
-      $sin(#method(value.source.data, show-error: show-error))$
+      $sin(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
     } else if operation == "cos" {
-      $cos(#method(value.source.data, show-error: show-error))$
+      $cos(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
     } else if operation == "tan" {
-      $tan(#method(value.source.data, show-error: show-error))$
+      $tan(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
     } else if operation == "asin" {
-      $arcsin(#method(value.source.data, show-error: show-error))$
+      $arcsin(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
     } else if operation == "acos" {
-      $arccos(#method(value.source.data, show-error: show-error))$
+      $arccos(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
     } else if operation == "atan" {
-      $arctan(#method(value.source.data, show-error: show-error))$
+      $arctan(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
     }
   } else {
     variable(value, show-error: show-error)
   }
 }
 
-#let method-result(value, show-error: false, ..args) = {
+#let method-result(value, show-error: false, depth: none, ..args) = {
   value = utility.normalise-quantity(value)
-
   math.equation(
     $
-      #method(value, show-error: show-error) = #variable(value, show-error: show-error)
+      #method(value, show-error: show-error, depth: depth) = #variable(value, show-error: show-error)
     $,
     ..args,
   )
@@ -175,22 +194,36 @@
 
 #let _has-error(x) = not x.at("constant", default: false) and utility.as-uncertainty(x) not in (none, 0)
 
-#let error-method(value) = {
+#let error-method(value, depth: none, frozen: false) = {
   value = utility.normalise-quantity(value)
-  if value.at("source", default: none) != none {
-    let operation = value.source.op
+
+  let is-boundary = value.at("boundary", default: false)
+  let free = frozen and not is-boundary
+  let expand = value.at("source", default: none) != none and (free or depth == none or depth > 0)
+
+  let child-depth = if depth == none {
+    none
+  } else if free {
+    depth
+  } else {
+    depth - 1
+  }
+  let child-frozen = frozen or is-boundary
+
+  if expand {
+    let operation = value.source.head
     if operation == "add" or operation == "sub" {
       let errors = _deduplicate-errors(value.source.data, consider-value: false)
       if errors.len() == 0 { return $0$ }
-      rss(errors.map(x => (count: x.count, error: error-method(x.error))))
+      rss(errors.map(x => (count: x.count, error: error-method(x.error, depth: child-depth, frozen: frozen))))
     } else if operation == "abs" or operation == "neg" {
-      error-method(value.source.data)
+      error-method(value.source.data, depth: child-depth, frozen: frozen)
     } else if operation == "mul" or operation == "div" {
       let errors = _deduplicate-errors(value.source.data)
       if errors.len() == 0 { return $0$ }
       context {
         let product = zero.impl.num-state.get().product
-        $#variable(value, show-error: false) product #rss(errors.map(x => (count: x.count, error: $#error-method(x.error)/ #variable(x.error, show-error: false)$)))$
+        $#variable(value, show-error: false) product #rss(errors.map(x => (count: x.count, error: $#error-method(x.error, depth: child-depth, frozen: frozen)/ #variable(x.error, show-error: false)$)))$
       }
     } else if operation == "pow" {
       let (base, exponent) = value.source.data
@@ -200,14 +233,14 @@
           count: 1,
           error: context {
             let product = zero.impl.num-state.get().product
-            $#variable(exponent, show-error: false) product #variable(value, show-error: false) product #error-method(base)/#variable(base, show-error: false)$
+            $#variable(exponent, show-error: false) product #variable(value, show-error: false) product #error-method(base, depth: child-depth, frozen: frozen)/#variable(base, show-error: false)$
           },
         ))
       }
       if _has-error(exponent) {
         terms.push((
           count: 1,
-          error: $#variable(value, show-error: false) dot ln(#variable(base, show-error: false)) dot #error-method(exponent)$,
+          error: $#variable(value, show-error: false) dot ln(#variable(base, show-error: false)) dot #error-method(exponent, depth: child-depth, frozen: frozen)$,
         ))
       }
       if terms.len() == 0 { return $0$ }
@@ -220,14 +253,14 @@
           count: 1,
           error: context {
             let product = zero.impl.num-state.get().product
-            $#variable(index, show-error: false) product #variable(value, show-error: false) product #error-method(radicand)/#variable(radicand, show-error: false)$
+            $#variable(index, show-error: false) product #variable(value, show-error: false) product #error-method(radicand, depth: child-depth, frozen: frozen)/#variable(radicand, show-error: false)$
           },
         ))
       }
       if _has-error(index) {
         terms.push((
           count: 1,
-          error: $#variable(value, show-error: false) dot ln(#variable(radicand, show-error: false)) dot #error-method(index)$,
+          error: $#variable(value, show-error: false) dot ln(#variable(radicand, show-error: false)) dot #error-method(index, depth: child-depth, frozen: frozen)$,
         ))
       }
       if terms.len() == 0 { return $0$ }
@@ -238,43 +271,43 @@
       if _has-error(val) {
         terms.push((
           count: 1,
-          error: $#error-method(val) / (#variable(val, show-error: false) dot ln(#variable(base, show-error: false)))$,
+          error: $#error-method(val, depth: child-depth, frozen: frozen) / (#variable(val, show-error: false) dot ln(#variable(base, show-error: false)))$,
         ))
       }
       if _has-error(base) {
         terms.push((
           count: 1,
-          error: $#variable(value, show-error: false) dot #error-method(base) / (#variable(base, show-error: false) dot ln(#variable(base, show-error: false)))$,
+          error: $#variable(value, show-error: false) dot #error-method(base, depth: child-depth, frozen: frozen) / (#variable(base, show-error: false) dot ln(#variable(base, show-error: false)))$,
         ))
       }
       if terms.len() == 0 { return $0$ }
       rss(terms)
     } else if operation == "sin" {
       if not _has-error(value.source.data) { return $0$ }
-      $abs(cos(#variable(value.source.data, show-error: false))) dot #error-method(value.source.data)$
+      $abs(cos(#variable(value.source.data, show-error: false))) dot #error-method(value.source.data, depth: child-depth, frozen: frozen)$
     } else if operation == "cos" {
       if not _has-error(value.source.data) { return $0$ }
-      $abs(sin(#variable(value.source.data, show-error: false))) dot #error-method(value.source.data)$
+      $abs(sin(#variable(value.source.data, show-error: false))) dot #error-method(value.source.data, depth: child-depth, frozen: frozen)$
     } else if operation == "tan" {
       if not _has-error(value.source.data) { return $0$ }
-      $#error-method(value.source.data) / cos^2(#variable(value.source.data, show-error: false))$
+      $#error-method(value.source.data, depth: child-depth, frozen: frozen) / cos^2(#variable(value.source.data, show-error: false))$
     } else if operation == "asin" or operation == "acos" {
       if not _has-error(value.source.data) { return $0$ }
-      $#error-method(value.source.data) / sqrt(1 - #variable(value.source.data, show-error: false)^2)$
+      $#error-method(value.source.data, depth: child-depth, frozen: frozen) / sqrt(1 - #variable(value.source.data, show-error: false)^2)$
     } else if operation == "atan" {
       if not _has-error(value.source.data) { return $0$ }
-      $#error-method(value.source.data) / (1 + #variable(value.source.data, show-error: false)^2)$
+      $#error-method(value.source.data, depth: child-depth, frozen: frozen) / (1 + #variable(value.source.data, show-error: false)^2)$
     }
   } else {
     error(value)
   }
 }
 
-#let error-method-result(value, ..args) = {
+#let error-method-result(value, depth: none, ..args) = {
   value = utility.normalise-quantity(value)
   math.equation(
     $
-      #error-method(value) = #error(value)
+      #error-method(value, depth: depth) = #error(value)
     $,
     ..args,
   )

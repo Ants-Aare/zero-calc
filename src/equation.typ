@@ -1,6 +1,7 @@
 #import "@preview/parsely:0.1.1"
 #import "arithmetic.typ"
 #import "utility.typ"
+#import "/src/lib/zero/src/zero.typ"
 
 #let to-tree(math) = {
   let (tree, rest) = parsely.parse(math, arithmetic.grammar)
@@ -8,18 +9,26 @@
 }
 
 #let calculate-tree(tree, ..values) = {
+  let variables = values
+    .named()
+    .map(x => {
+      let data = utility.normalise-quantity(x)
+      data.boundary = true
+      data
+    })
   if type(tree) == array {
     let results = tree.map(x => parsely.walk(
       x,
-      post: it => arithmetic.apply-operations(it, values.named()),
+      post: it => arithmetic.apply-operations(it, variables),
     ))
 
     results.dedup(key: x => x.float).map(utility.display).join([, ])
   } else {
     let result = parsely.walk(
       tree,
-      post: it => arithmetic.apply-operations(it, values.named()),
+      post: it => arithmetic.apply-operations(it, variables),
     )
+    result.boundary = true
     result.args = values
     utility.display(result)
   }

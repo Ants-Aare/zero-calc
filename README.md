@@ -48,6 +48,9 @@ Beyond basic arithmetic, **Zero-Calc** also understands math equations by using 
 <img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/3.png" />
 </p>
 
+## Constants
+Constants usually don't affect the amount of significant figures. The example above would strictly speaking only have one significant figure because our 2 sig-figs inputs are overpowered by the less precise factor of 1/2 with strictly speaking just 1 sig-fig. In equations defined in math mode all numbers are considered constants by default and do not affect the amount of significant figures. You can use the mathematical constants with `zcalc.pi` etc. or manually define constants using for example `#let avogadro = zcalc.const(num("6.022e+23"))`.
+
 ## Modifying Equation Trees and Isolating Variables
 You can parse a math equation into a tree and even isolate a variable (for simple equations). The result is a list of possible values.
 

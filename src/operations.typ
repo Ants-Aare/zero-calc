@@ -27,7 +27,7 @@
     ),
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: (op: "add", data: terms),
+    source: (head: "add", data: terms),
   )
 }
 
@@ -41,7 +41,7 @@
     x
   })
   let result = add((a,) + negative-terms)
-  result.source = (op: "sub", data: (a, terms))
+  result.source = (head: "sub", data: (a, terms))
   return result
 }
 
@@ -54,7 +54,7 @@
     round: as-round(term),
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
-    source: (op: "neg", data: term),
+    source: (head: "neg", data: term),
   )
 }
 
@@ -67,7 +67,7 @@
     round: as-round(term),
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
-    source: (op: "abs", data: term),
+    source: (head: "abs", data: term),
   )
 }
 
@@ -93,7 +93,7 @@
     round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: (op: "mul", data: terms),
+    source: (head: "mul", data: terms),
   )
 }
 
@@ -124,7 +124,7 @@
     round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: (op: "div", data: terms),
+    source: (head: "div", data: terms),
   )
 }
 
@@ -169,7 +169,7 @@
     ),
     unit: unit,
     constant: (base, exponent).all(x => x.at("constant", default: false)),
-    source: (op: "pow", data: (base, exponent)),
+    source: (head: "pow", data: (base, exponent)),
   )
 }
 
@@ -212,7 +212,7 @@
     ),
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
-    source: (op: "root", data: (radicand, index)),
+    source: (head: "root", data: (radicand, index)),
   )
 }
 
@@ -251,7 +251,7 @@
       (value, base).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
     ),
     constant: (value, base).all(x => x.at("constant", default: false)),
-    source: (op: "log", data: (value, base)),
+    source: (head: "log", data: (value, base)),
   )
 }
 
@@ -291,7 +291,7 @@
     info: create-info(result, error, target-e),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
-    source: (op: "sin", data: angle),
+    source: (head: "sin", data: angle),
   )
 }
 
@@ -329,7 +329,7 @@
     info: create-info(result, error, target-e),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
-    source: (op: "cos", data: angle),
+    source: (head: "cos", data: angle),
   )
 }
 
@@ -369,7 +369,7 @@
     info: create-info(result, error, target-e),
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
-    source: (op: "tan", data: angle),
+    source: (head: "tan", data: angle),
   )
 }
 
@@ -403,7 +403,7 @@
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
-    source: (op: "asin", data: value),
+    source: (head: "asin", data: value),
   )
 }
 
@@ -436,7 +436,7 @@
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
-    source: (op: "acos", data: value),
+    source: (head: "acos", data: value),
   )
 }
 
@@ -469,6 +469,6 @@
     round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
-    source: (op: "atan", data: value),
+    source: (head: "atan", data: value),
   )
 }

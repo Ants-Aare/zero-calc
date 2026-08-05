@@ -89,6 +89,7 @@
       "cannot evaluate symbol: " + repr(it),
     )
   }
+  quantity.boundary = true
   return quantity
 }
 
@@ -158,7 +159,6 @@
   }
 }
 
-#let calculate-math(math) = calculate-tree.with(math-to-tree(math))
 
 #let invert(node, others, path) = {
   let (head, args, slots) = node
