@@ -157,11 +157,18 @@
 
         if info.pm != none {
           let error-intcount = info.pm.at(0).trim("0", at: start).len()
-          uncertainty = round.at("uncertainty-precision", default: round.precision) - error-intcount
+          uncertainty = round.at("uncertainty-precision", default: round.precision)
+          if type(uncertainty) == dictionary {
+            uncertainty = uncertainty.places
+          }
+          uncertainty -= error-intcount
         }
       } else {
         value-frac = round.at("precision", default: value-frac)
         uncertainty = round.at("uncertainty-precision", default: uncertainty)
+        if type(uncertainty) == dictionary {
+          uncertainty = uncertainty.places
+        }
       }
     }
     return (
@@ -183,7 +190,7 @@
     mode: "places",
   )
   if uncertainty-places < 900 {
-    round += (uncertainty-precision: uncertainty-places)
+    round += (uncertainty-precision: (places: uncertainty-places))
   }
   return round
 }
@@ -200,8 +207,10 @@
       if round.at("mode", default: none) == "places" {
         value = (info.int).trim("0", at: start).len() + round.precision
         if info.pm != none {
+          let uncertainty-precision = round.at("uncertainty-precision", default: round.precision)
+          if type(uncertainty-precision) == dictionary { uncertainty-precision = uncertainty-precision.places }
           uncertainty = (
-            info.pm.at(0) + info.pm.at(1).slice(0, count: round.at("uncertainty-precision", default: round.precision))
+            info.pm.at(0) + info.pm.at(1).slice(0, count: uncertainty-precision)
           )
             .trim("0")
             .len()

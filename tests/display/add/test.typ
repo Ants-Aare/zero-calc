@@ -6,7 +6,7 @@
 #let values = range(1, 3).map(x => m(str(x / 7 * 3) + "+-1.23456", round: (
   precision: 3,
   mode: "places",
-  uncertainty-precision: 1,
+  uncertainty-precision: (places: 1),
 )))
 #let value = zcalc.add(..values)
 

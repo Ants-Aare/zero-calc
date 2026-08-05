@@ -20,7 +20,11 @@
     }
     if round != none {
       value.round.precision = calc.min(
-        value.round.at("uncertainty-precision", default: 15),
+        {
+          let u = value.round.at("uncertainty-precision", default: 15)
+          if type(u) == dictionary { u = u.places }
+          u
+        },
         value.round.at("precision", default: 15),
         value.at("pm", default: (none, range(15))).at(1).len(),
       )
@@ -159,8 +163,10 @@
   round = if (
     round != none and round.at("uncertainty-precision", default: none) != none
   ) {
+    let precision = round.uncertainty-precision
+    if type(precision) == dictionary { precision = precision.places }
     (
-      precision: round.uncertainty-precision,
+      precision: precision,
       mode: round.mode,
     )
   }
