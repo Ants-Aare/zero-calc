@@ -1,5 +1,5 @@
 #import "/src/lib/zero/src/zero.typ": *
-#import "/src/lib.typ": *
+#import "/src/zero-calc.typ": *
 #set page(width: auto, height: auto, margin: .5em)
 #let m = zi.meter
 #let s = zi.second

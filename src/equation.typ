@@ -9,13 +9,7 @@
 }
 
 #let calculate-tree(tree, ..values) = {
-  let variables = values
-    .named()
-    .map(x => {
-      let data = utility.normalise-quantity(x)
-      data.boundary = true
-      data
-    })
+  let variables = values.named()
   if type(tree) == array {
     let results = tree.map(x => parsely.walk(
       x,

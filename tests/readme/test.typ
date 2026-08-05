@@ -1,5 +1,5 @@
 #import "/src/lib/zero/src/zero.typ": *
-#import "/src/lib.typ": *
+#import "/src/zero-calc.typ": *
 #import "@preview/parsely:0.1.1"
 #set page(width: auto, height: auto, margin: .5em)
 #set align(center)
