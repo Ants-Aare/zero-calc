@@ -20,5 +20,5 @@
 #acceleration(t: s("5"), a: m-s2("2"))
 #m-s(10)
 
-#kinetic-energy(m1: zi.kg("75.000"), v: m-s("1.0e1"))\
-#kinetic-energy(m1: zi.kg("75.0"), t: s("5.0"), a: m-s2("2.0"), v: acceleration)
+#kinetic-energy(m-1: zi.kg("75.000"), v: m-s("1.0e1"))\
+#kinetic-energy(m-1: zi.kg("75.0"), t: s("5.0"), a: m-s2("2.0"), v: acceleration)

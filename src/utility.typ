@@ -1,11 +1,6 @@
 #import "lib/zero/src/zero.typ": *
 #import impl.utility: *
 
-#let typst-builtin-symbol = [--].func()
-#let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
-#let invisible-symbols = regex("[\)]")
-#let illegal-symbols = regex("[,. −\(]")
-
 #let symbol-names = (
   math.alpha: "alpha",
   math.Alpha: "Alpha",
@@ -57,6 +52,11 @@
   math.Omega: "Omega",
 )
 
+#let typst-builtin-symbol = [--].func()
+#let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
+#let invisible-symbols = regex("[, \)]")
+#let illegal-symbols = regex("[.−\(]")
+
 #let to-str(content) = {
   if content == none {
     return none
@@ -73,7 +73,7 @@
     }
   } else if content.func() == math.attach {
     (
-      to-str(content.base),
+      to-str(content.base) + "-",
       to-str(content.at("b", default: none)),
       to-str(content.at("br", default: none)),
       to-str(content.at("bl", default: none)),

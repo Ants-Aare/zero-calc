@@ -49,7 +49,11 @@ Beyond basic arithmetic, **Zero-Calc** also understands math equations by using 
 </p>
 
 ## Constants
-Constants usually don't affect the amount of significant figures. The example above would strictly speaking only have one significant figure because our 2 sig-figs inputs are overpowered by the less precise factor of 1/2 with strictly speaking just 1 sig-fig. In equations defined in math mode all numbers are considered constants by default and do not affect the amount of significant figures. You can use the mathematical constants with `zcalc.pi` etc. or manually define constants using for example `#let avogadro = zcalc.const(num("6.022e+23"))`.
+Constants usually don't affect the amount of significant figures. The example above would strictly speaking only have one significant figure because our 2 sig-figs inputs are overpowered by the less precise factor of 1/2 with strictly speaking just 1 sig-fig. In equations defined in math mode all numbers are considered constants by default and do not affect the amount of significant figures. You can use the mathematical constants with `zcalc.pi` etc. or manually define constants like this
+
+```typst
+#let avogadro = zcalc.const(num("6.022e+23"))
+```
 
 ## Modifying Equation Trees and Isolating Variables
 You can parse a math equation into a tree and even isolate a variable (for simple equations). The result is a list of possible values.
@@ -59,12 +63,15 @@ You can parse a math equation into a tree and even isolate a variable (for simpl
 #let velocity-tree = equation.isolate-variable(kinetic-energy-tree, $v$)
 
 #display.equation(velocity-tree.first())
-#equation.calculate-tree(velocity-tree, m: g[10], Ekin: g-m2-s-2[180])
+#equation.calculate-tree(velocity-tree, m: g[10], E-kin: g-m2-s-2[180])
 
 ```
 <p align="center">
 <img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/4.png" />
 </p>
+
+## **Zero-Calc** for packages
+Use the `zero-calc.impl` namespace to access internal methods. The `utility.normalise-quantity` method automatically converts zero quantities, strings, content or floats to a serialised format which can easily be displayed using the `utility.display` function. When writing packages you might not always need the displaying capabilities of zero-calc, or might just need them at the end when returning a value to the user. In that case you can use the `impl.operations` namespace which is mostly symmetrical to the `zcalc`namespace but returns dictionaries which can be passed into further operations without needing to be packed and unpacked in content. To manipulate units use `impl.units`.
 
 ## List of supported operations
 - zcalc.add(summand1, summand2, ..)
