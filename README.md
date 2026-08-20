@@ -15,7 +15,7 @@ The zcalc namespace can replace regular calc function calls in most cases. Use z
 ```
 
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/1.png" />
+<img alt="The result of the operation thirty plus minus zero point three divided by five plus minus zero point four rendered with the zero package" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/1.png" />
 </p>
 
 ## Calculation History and Error Propagation
@@ -29,12 +29,12 @@ You can use the results of operations to do further calculations. Every `zcalc` 
 #display.error-method-result(value)
 ```
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/2.png" />
+<img alt="At the top an equation with the operations on the left and the result with properly combined units on the right. At the bottom a complex series of operations calculating the error propagation using the values and units." src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/2.png" />
 </p>
 If you don't want a variable to be considered in the error and sigfigs calcullation, then you can declare it as a constant by using `zcalc.const`.
 
 ## Defining and using equations
-Beyond basic arithmetic, **Zero-Calc** also understands math equations by using [Parsely](https://typst.app/universe/package/parsely) under the hood. Define equations once and call them by giving the necessary parameters. Feel free to combine this with `zcalc` operations.
+Beyond basic arithmetic **Zero-Calc** also understands typst math equations by using [Parsely](https://typst.app/universe/package/parsely) under the hood. Define equations once and call them by giving the necessary parameters. Feel free to combine this with `zcalc` operations.
 
 ```typst
 #let kinetic-energy-math = $E_"kin" = 1/2 m v^2$
@@ -45,7 +45,7 @@ Beyond basic arithmetic, **Zero-Calc** also understands math equations by using 
 #display.method-result(value)
 ```
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/3.png" />
+<img alt="At the top a regular typst math equation. At the bottom the same equation with values and units filled in and the result displayed." src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/3.png" />
 </p>
 
 ## Constants
@@ -67,7 +67,7 @@ You can parse a math equation into a tree and even isolate a variable (for simpl
 
 ```
 <p align="center">
-<img alt="" src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/4.png" />
+<img alt="At the top the modified equation with all variables apart from velocity moved to the right. At the bottom the two possible results, both 6 meters per second and negative 6 meters per second." src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/4.png" />
 </p>
 
 ## **Zero-Calc** for packages
