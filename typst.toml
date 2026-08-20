@@ -9,4 +9,4 @@ repository = "https://github.com/Ants-Aare/zero-calc"
 description = "Calculate and display operations with _Zero_ quantities and numbers."
 categories = ["utility", "scripting", "components"]
 disciplines = ["physics", "chemistry", "engineering", "mathematics", "economics", "computer-science"]
-keywords = ["number", "table", "siunitx", "numeral", "alignment", "formatting", "num", "ztable"]
+keywords = ["number", "table", "siunitx", "numeral", "alignment", "formatting", "num", "ztable", "zero"]

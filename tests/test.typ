@@ -1,17 +1,17 @@
 #import "../../src/lib.typ": *
-#import "../../src/lib/zero/src/zero.typ": *
+#import "@preview/zero:0.7.0": *
 
-#set page(width:auto, height: auto, margin:0.5em)
+#set page(width: auto, height: auto, margin: 0.5em)
 
 #let J = zi.declare("J")
 #let J-mol = zi.declare("J/mol")
 #let J-mol-K = zi.declare("J/mol/K")
 #let Hz = zi.declare("1/s")
 #let K = zi.K
-#let m = zi.meter.with(exponent:"eng")
-#let mol = zi.mol.with(exponent:"eng")
-#let g = zi.gram.with(exponent:"eng")
-#set-unit(fraction:"fraction")
+#let m = zi.meter.with(exponent: "eng")
+#let mol = zi.mol.with(exponent: "eng")
+#let g = zi.gram.with(exponent: "eng")
+#set-unit(fraction: "fraction")
 
 // #let A = Hz("1.50e4")
 // #let E-a = J-mol("50e3")

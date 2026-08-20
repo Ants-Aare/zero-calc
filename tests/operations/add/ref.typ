@@ -1,4 +1,4 @@
-#import "/src/lib/zero/src/zero.typ": *
+#import "@preview/zero:0.7.0": *
 #import "/src/zero-calc.typ": *
 #set page(width: auto, height: auto, margin: .5em)
 #let m = zi.meter.with(exponent: "eng")

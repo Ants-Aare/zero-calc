@@ -1,4 +1,4 @@
-#import "lib/zero/src/zero.typ": *
+#import "@preview/zero:0.7.0": *
 #import impl.utility: *
 
 #let symbol-names = (

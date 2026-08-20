@@ -1,5 +1,5 @@
 #import "../../src/lib.typ": *
-#import "../../src/lib/zero/src/zero.typ": *
+#import "@preview/zero:0.7.0": *
 
 #set page(width: auto, height: auto, margin: 0.5em)
 

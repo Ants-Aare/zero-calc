@@ -1,6 +1,6 @@
 #import "/src/zero-calc.typ": *
 #import impl.utility: *
-#import "/src/lib/zero/src/zero.typ": *
+#import "@preview/zero:0.7.0": *
 #set page(width: auto, height: auto, margin: .5em)
 
 #let x = zcalc.div("22", "2+-0.1")

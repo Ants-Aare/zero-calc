@@ -1,4 +1,4 @@
-#import "lib/zero/src/zero.typ"
+#import "@preview/zero:0.7.0"
 #import "units.typ"
 #import "utility.typ": (
   as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, normalise-constant,
