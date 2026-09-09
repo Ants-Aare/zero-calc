@@ -28,6 +28,7 @@
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "add", data: terms),
+    args: terms.map(x => x.at("args", default: none)).sum(),
   )
 }
 
@@ -55,6 +56,7 @@
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
     source: (head: "neg", data: term),
+    args: term.at("args", default: none),
   )
 }
 
@@ -68,6 +70,7 @@
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
     source: (head: "abs", data: term),
+    args: term.at("args", default: none),
   )
 }
 
@@ -94,6 +97,7 @@
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "mul", data: terms),
+    args: terms.map(x => x.at("args", default: none)).sum(),
   )
 }
 
@@ -125,6 +129,7 @@
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "div", data: terms),
+    args: terms.map(x => x.at("args", default: none)).sum(),
   )
 }
 
@@ -170,6 +175,7 @@
     unit: unit,
     constant: (base, exponent).all(x => x.at("constant", default: false)),
     source: (head: "pow", data: (base, exponent)),
+    args: (base, exponent).map(x => x.at("args", default: none)).sum(),
   )
 }
 
@@ -213,6 +219,7 @@
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
     source: (head: "root", data: (radicand, index)),
+    args: (radicand, index).map(x => x.at("args", default: none)).sum(),
   )
 }
 
@@ -252,6 +259,7 @@
     ),
     constant: (value, base).all(x => x.at("constant", default: false)),
     source: (head: "log", data: (value, base)),
+    args: (value, base).map(x => x.at("args", default: none)).sum(),
   )
 }
 
@@ -292,6 +300,7 @@
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
     source: (head: "sin", data: angle),
+    args: angle.at("args", default: none),
   )
 }
 
@@ -330,6 +339,7 @@
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
     source: (head: "cos", data: angle),
+    args: angle.at("args", default: none),
   )
 }
 
@@ -370,6 +380,7 @@
     round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
     constant: angle.at("constant", default: false),
     source: (head: "tan", data: angle),
+    args: angle.at("args", default: none),
   )
 }
 
@@ -404,6 +415,7 @@
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (head: "asin", data: value),
+    args: value.at("args", default: none),
   )
 }
 
@@ -437,6 +449,7 @@
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (head: "acos", data: value),
+    args: value.at("args", default: none),
   )
 }
 
@@ -470,5 +483,64 @@
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (head: "atan", data: value),
+    args: value.at("args", default: none),
   )
+}
+
+#let convert-units-to-si(quantity) = {
+  let result = quantity
+  for unit in quantity.unit.numerator {
+    let unit-conversion = si-conversions.at(unit.at(0), default: none)
+
+    if unit-conversion != none {
+      let factor = unit-conversion.at("factor", default: none)
+      let offset = unit-conversion.at("offset", default: none)
+      if factor != none or offset != none {
+        if factor != none {
+          let removal-unit = unit-conversion.unit
+          removal-unit.denominator.push(unit)
+          result = operations.mul((
+            result,
+            operations.const((
+              float: unit-conversion.factor,
+              info: zero.impl.parsing.parse-numeral(unit-conversion.factor),
+              unit: removal-unit,
+            )),
+          ))
+        }
+        if offset != none {}
+      } else {}
+      // if (
+      //   unit-conversion.at("offset", default: none) != none
+      //     and quantity.unit.numerator.len() == 1
+      //     and quantity.unit.denominator.len() == 0
+      // ) {
+      //   quantity.float += unit-conversion.offset
+      // }
+    }
+  }
+  for unit in quantity.unit.denominator {
+    let unit-conversion = si-conversions.at(unit.at(0), default: none)
+
+    if unit-conversion != none {
+      if unit-conversion.at("factor", default: none) != none {
+        let removal-unit = unit-conversion.unit
+        (removal-unit.numerator, removal-unit.denominator) = (removal-unit.denominator, removal-unit.numerator)
+        removal-unit.numerator.push(unit)
+        result = mul(
+          (
+            result,
+            const((
+              float: 1 / unit-conversion.factor,
+              info: zero.impl.parsing.parse-numeral(1 / unit-conversion.factor),
+              unit: removal-unit,
+              args: arguments(),
+            )),
+          ),
+        )
+      }
+    }
+  }
+
+  return result
 }
