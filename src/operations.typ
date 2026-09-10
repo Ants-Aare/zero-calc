@@ -2,7 +2,7 @@
 #import "units.typ"
 #import "utility.typ": (
   as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, normalise-constant,
-  normalise-quantity, rss,
+  normalise-quantity, prefixes, rss, si-conversions,
 )
 
 #let const = normalise-constant
@@ -490,7 +490,29 @@
 #let convert-units-to-si(quantity) = {
   let result = quantity
   for unit in quantity.unit.numerator {
-    let unit-conversion = si-conversions.at(unit.at(0), default: none)
+    let prefix = if unit.at(0).len() != 1 { unit.at(0).first() }
+    let unit-name = unit.at(0)
+    if prefix != none and prefix in prefixes.keys() {
+      unit-name = unit-name.slice(prefix.len())
+    } else {
+      prefix = none
+    }
+
+    if prefix != none and unit.at(0) != "kg" {
+      let prefix-e = prefixes.at(prefix)
+
+      let removal-unit = (numerator: ((unit-name, "1"),), denominator: ((unit.at(0), "1"),))
+      let multiplier = calc.pow(10, prefix-e + int(unit.at(1)))
+      result = mul((
+        result,
+        const((
+          float: multiplier,
+          info: zero.impl.parsing.parse-numeral(multiplier),
+          unit: removal-unit,
+        )),
+      ))
+    }
+    let unit-conversion = si-conversions.at(unit-name, default: none)
 
     if unit-conversion != none {
       let factor = unit-conversion.at("factor", default: none)
@@ -499,9 +521,9 @@
         if factor != none {
           let removal-unit = unit-conversion.unit
           removal-unit.denominator.push(unit)
-          result = operations.mul((
+          result = mul((
             result,
-            operations.const((
+            const((
               float: unit-conversion.factor,
               info: zero.impl.parsing.parse-numeral(unit-conversion.factor),
               unit: removal-unit,
@@ -520,7 +542,14 @@
     }
   }
   for unit in quantity.unit.denominator {
-    let unit-conversion = si-conversions.at(unit.at(0), default: none)
+    let prefix = if unit.at(0).len() != 1 { unit.at(0).first() }
+    let unit-name = unit.at(0)
+    if prefix != none and prefix in prefixes.keys() {
+      unit-name = unit-name.slice(prefix.len())
+    } else {
+      prefix = none
+    }
+    let unit-conversion = si-conversions.at(unit-name, default: none)
 
     if unit-conversion != none {
       if unit-conversion.at("factor", default: none) != none {

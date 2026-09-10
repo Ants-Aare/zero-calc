@@ -52,6 +52,21 @@
   math.Omega: "Omega",
 )
 
+#let prefixes = (
+  "k": 3,
+  "M": 6,
+  "G": 9,
+  "T": 12,
+  "P": 15,
+  "E": 18,
+  "m": -3,
+  "µ": -6,
+  "n": -9,
+  "p": -12,
+  "f": -15,
+  "a": -18,
+)
+
 #let typst-builtin-symbol = [--].func()
 #let valid-number-regex = regex("[+\-]?(\d+\.\d*|\d*\.\d+|\d+)([e][+\-]?\d+)?")
 #let invisible-symbols = regex("[, \)]")
@@ -293,6 +308,43 @@
   }
   ((create-result-metadata(value),) + result.children.slice(1)).join()
 }
+
+#let si-conversions = (
+  "min": (unit: (numerator: (("s", "1"),), denominator: ()), factor: 60),
+  "h": (unit: (numerator: (("s", "1"),), denominator: ()), factor: 360),
+  "d": (unit: (numerator: (("s", "1"),), denominator: ()), factor: 8.640),
+  "Bq": (unit: (numerator: (), denominator: (("s", "1"),))),
+  "Hz": (unit: (numerator: (), denominator: (("s", "1"),))),
+  "H": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"), ("A", "2")))),
+  "J": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"),))),
+  "N": (unit: (numerator: (("kg", "1"), ("m", "1")), denominator: (("s", "2"),))),
+  "Pa": (unit: (numerator: ("kg", "1"), denominator: (("m", "1"), ("s", "2")))),
+  sym.Omega: (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"), ("A", "2")))),
+  "S": (unit: (numerator: (("s", "3"), ("A", "2")), denominator: (("kg", "1"), ("m", "2")))),
+  "kat": (unit: (numerator: (("mol", "1"),), denominator: (("s", "1"),))),
+  sym.degree + "C": (unit: (numerator: (("K", "1"),), denominator: ()), offset: 273.15),
+  "C": (unit: (numerator: (("A", "1"), ("s", "1")), denominator: ())),
+  "Gy": (unit: (numerator: (("m", "2"),), denominator: (("s", "2"),))),
+  "F": (unit: (numerator: (("A", "2"), ("s", "4")), denominator: (("kg", "1"), ("m", "2")))),
+  "T": (unit: (numerator: (("kg", "1"),), denominator: (("s", "2"), ("A", "1")))),
+  "V": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"), ("A", "1")))),
+  "W": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"),))),
+  "au": (unit: (numerator: (("m", "1"),), denominator: ()), factor: 149597870700),
+  "Da": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: 1.66053906892e-27),
+  "eV": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"),)), factor: 1.602176634e-19),
+  "ha": (unit: (numerator: (("m", "2"),), denominator: ()), factor: 10000),
+  "l": (unit: (numerator: (("m", "3"),), denominator: ()), factor: 0.001),
+  "t": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: 1000),
+  "g": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: 0.001),
+)
+
+#let default-state = (
+  preferred-units: (),
+)
+
+#let zcalc-state = state("zcalc-state", default-state)
+
+
 
 #let normalise-quantity(candidate) = {
   let metadata = impl.utility.retrieve-metadata(candidate)

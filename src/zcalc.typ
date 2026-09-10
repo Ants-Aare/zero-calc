@@ -11,69 +11,81 @@
 #let tau = const(calc.tau)
 #let inf = const(calc.inf)
 
-
-#let add(..summands) = {
+#let add(convert-si: false, ..summands) = {
   let datas = utility.normalise-quantities(summands.pos(), apply-unit: true)
+  if convert-si { datas = datas.map(operations.convert-units-to-si) }
   let result = operations.add(datas)
   result += (args: arguments(..(summands.named() + datas.first().args.named())))
   return utility.display(result)
 }
 
-#let sub(minuend, ..subtrahends) = {
+#let sub(minuend, convert-si: false, ..subtrahends) = {
   let datas = utility.normalise-quantities((minuend,) + subtrahends.pos(), apply-unit: true)
+  if convert-si { datas = datas.map(operations.convert-units-to-si) }
   let result = operations.sub(datas.first(), datas.slice(1))
   result += (args: arguments(..(subtrahends.named() + datas.first().args.named())))
   return utility.display(result)
 }
 
-#let abs(value, ..args) = {
+#let abs(value, convert-si: false, ..args) = {
   let value = utility.normalise-quantity(value)
+  if convert-si { value = operations.convert-units-to-si(value) }
   let result = operations.abs(value)
   result += (args: arguments(..(args.named() + value.args.named())))
   return utility.display(result)
 }
-#let neg(value, ..args) = {
+#let neg(value, convert-si: false, ..args) = {
   let value = utility.normalise-quantity(value)
+  if convert-si { value = operations.convert-units-to-si(value) }
   let result = operations.neg(value)
   result += (args: arguments(..(args.named() + value.args.named())))
   return utility.display(result)
 }
 
-#let mul(..factors) = {
+#let mul(convert-si: false, ..factors) = {
   let datas = utility.normalise-quantities(factors.pos())
+  if convert-si { datas = datas.map(operations.convert-units-to-si) }
   let result = operations.mul(datas)
   result += (args: arguments(..(factors.named() + datas.first().args.named())))
   return utility.display(result)
 }
 
-#let div(dividend, divisor, ..args) = {
+#let div(dividend, divisor, convert-si: false, ..args) = {
   let (dividend, divisor) = utility.normalise-quantities((dividend, divisor))
+  if convert-si {
+    (dividend, divisor) = (operations.convert-units-to-si(dividend), operations.convert-units-to-si(divisor))
+  }
   let result = operations.div(dividend, divisor)
   result += (args: arguments(..(args.named() + dividend.args.named())))
   return utility.display(result)
 }
 
-#let pow(base, exponent, ..args) = {
+#let pow(base, exponent, convert-si: false, ..args) = {
   let (base, exponent) = utility.normalise-quantities((base, exponent))
+  if convert-si { base = operations.convert-units-to-si(base) }
   let result = operations.pow(base, exponent)
   result += (args: arguments(..(args.named() + base.args.named())))
   return utility.display(result)
 }
-#let exp(exponent, ..args) = {
+
+#let exp(exponent, convert-si: false, ..args) = {
   let exponent = utility.normalise-quantity(exponent)
   let result = operations.exp(exponent)
   result += (args: arguments(..(args.named() + exponent.args.named())))
   return utility.display(result)
 }
 
-#let root(radicand, index, ..args) = {
+#let root(radicand, index, convert-si: false, ..args) = {
   let (radicand, index) = utility.normalise-quantities((radicand, index))
+  if convert-si {
+    (radicand, index) = (operations.convert-units-to-si(radicand), operations.convert-units-to-si(index))
+  }
   let result = operations.root(radicand, index)
   result += (args: arguments(..(args.named() + radicand.args.named())))
   return utility.display(result)
 }
 
-#let sqrt(radicand, ..args) = {
+#let sqrt(radicand, convert-si: false, ..args) = {
   let radicand = utility.normalise-quantity(radicand)
   let result = operations.sqrt(radicand)
   result += (args: arguments(..(args.named() + radicand.args.named())))
@@ -130,4 +142,10 @@
   let result = operations.atan(value, unit: unit)
   result += (args: arguments(..(args.named() + value.args.named())))
   return utility.display(result)
+}
+
+#let convert-units-to-si(quantity) = {
+  let value = utility.normalise-quantity(quantity)
+  value = operations.convert-units-to-si(value)
+  return utility.display(value)
 }
