@@ -1,7 +1,7 @@
 #import "@preview/zero:0.7.0"
 #import "units.typ"
 #import "utility.typ": (
-  as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, normalise-constant,
+  as-float, as-round, as-uncertainty, base-si-units, create-info, get-e, get-places, get-sig-figs, normalise-constant,
   normalise-quantity, prefixes, rss, si-conversions,
 )
 
@@ -487,89 +487,171 @@
   )
 }
 
-#let convert-units-to-si(quantity) = {
+#let apply-prefix(value, unit, in-numerator) = {
+  let prefix = if unit.at(0).len() != 1 { unit.at(0).first() }
+  let unit-name = unit.at(0)
+  if prefix != none and prefix in prefixes.keys() and not unit-name in base-si-units {
+    let actual-unit = unit-name.slice(prefix.len())
+    if actual-unit in base-si-units or actual-unit in si-conversions.keys() or actual-unit == "g" {
+      unit-name = actual-unit
+    } else {
+      prefix = none
+    }
+  } else {
+    prefix = none
+  }
+
+  if prefix != none {
+    let prefix-e = prefixes.at(prefix)
+    let removal-unit = (
+      numerator: ((if unit-name == "g" { "kg" } else { unit-name }, unit.at(1)),),
+      denominator: ((unit.at(0), unit.at(1)),),
+    )
+    if not in-numerator {
+      removal-unit = (numerator: removal-unit.denominator, denominator: removal-unit.numerator)
+    }
+    let sign = if in-numerator { 1 } else { -1 }
+    let correction = if unit-name == "g" { -3 } else { 0 }
+    let exponent = (prefix-e * int(unit.at(1)) * sign) + correction
+    let multiplier = const(
+      (
+        float: calc.pow(10, exponent),
+        info: (int: "1", frac: "", sign: "+", pm: none, e: str(exponent)),
+        unit: removal-unit,
+        args: arguments(omit-unity-mantissa: true),
+      ),
+    )
+    value = mul((
+      value,
+      multiplier,
+    ))
+  }
+  return (value, unit-name)
+}
+
+#let apply-unit-conversion(value, unit, in-numerator, use-division: false) = {
+  let unit-conversion = si-conversions.at(unit.at(0), default: none)
+
+  if unit-conversion == none {
+    return value
+  }
+
+  let factor = unit-conversion.at("factor", default: none)
+  let offset = unit-conversion.at("offset", default: none)
+  // if factor != none or offset != none {
+  //   if factor != none {
+
+  let removal-unit = unit-conversion.unit
+  removal-unit.denominator.push(unit)
+
+  let multiplier-value = if factor != none {
+    unit-conversion.factor
+  } else { "" }
+
+  let multiplier
+
+  if factor != none {
+    multiplier = const(
+      (
+        float: if multiplier-value != "" { float(multiplier-value) } else { 1 },
+        info: if multiplier-value != "" { zero.impl.parsing.parse-numeral(multiplier-value) } else {
+          (int: "", frac: "", sign: "+", pm: none, e: none)
+        },
+        unit: (numerator: removal-unit.numerator, denominator: ()),
+        args: arguments(omit-unity-mantissa: true),
+      ),
+    )
+    if unit.at(1) != "1" {
+      multiplier = pow(multiplier, const(unit.at(1)))
+      multiplier.source = none
+    }
+
+    let x = const(
+      (
+        float: 1,
+        info: (int: "1", frac: "", sign: "+", pm: none, e: none),
+        unit: (numerator: removal-unit.denominator, denominator: ()),
+        args: arguments(omit-unity-mantissa: true),
+      ),
+    )
+    if in-numerator {
+      multiplier = div(multiplier, x)
+    } else {
+      multiplier = div(x, multiplier)
+    }
+  } else {
+    if not in-numerator {
+      removal-unit = (numerator: removal-unit.denominator, denominator: removal-unit.numerator)
+    }
+    multiplier = const(
+      (
+        float: if multiplier-value != "" { float(multiplier-value) } else { 1 },
+        info: if multiplier-value != "" { zero.impl.parsing.parse-numeral(multiplier-value) } else {
+          (int: "", frac: "", sign: "+", pm: none, e: none)
+        },
+        unit: removal-unit,
+        args: arguments(omit-unity-mantissa: true),
+      ),
+    )
+  }
+
+  value = mul((
+    value,
+    multiplier,
+  ))
+  // value = div(
+  //   value,
+  //   multiplier,
+  // )
+
+  return value
+}
+//   if offset != none {}
+// } else {}
+// // if (
+// //   unit-conversion.at("offset", default: none) != none
+// //     and quantity.unit.numerator.len() == 1
+// //     and quantity.unit.denominator.len() == 0
+// // ) {
+// //   quantity.float += unit-conversion.offset
+// // }
+// //  if unit-conversion.at("factor", default: none) != none {
+//   //     let removal-unit = unit-conversion.unit
+//   //     (removal-unit.numerator, removal-unit.denominator) = (removal-unit.denominator, removal-unit.numerator)
+//   //     removal-unit.numerator.push(unit)
+//   //     result = mul(
+//   //       (
+//   //         result,
+//   //         const((
+//   //           float: 1 / unit-conversion.factor,
+//   //           info: zero.impl.parsing.parse-numeral(1 / unit-conversion.factor),
+//   //           unit: removal-unit,
+//   //           args: arguments(),
+//   //         )),
+//   //       ),
+//   //     )
+//   //   }
+}
+
+#let convert-units-to-si(quantity, save-operations: false) = {
   let result = quantity
   for unit in quantity.unit.numerator {
-    let prefix = if unit.at(0).len() != 1 { unit.at(0).first() }
-    let unit-name = unit.at(0)
-    if prefix != none and prefix in prefixes.keys() {
-      unit-name = unit-name.slice(prefix.len())
-    } else {
-      prefix = none
-    }
-
-    if prefix != none and unit.at(0) != "kg" {
-      let prefix-e = prefixes.at(prefix)
-
-      let removal-unit = (numerator: ((unit-name, "1"),), denominator: ((unit.at(0), "1"),))
-      let multiplier = calc.pow(10, prefix-e + int(unit.at(1)))
-      result = mul((
-        result,
-        const((
-          float: multiplier,
-          info: zero.impl.parsing.parse-numeral(multiplier),
-          unit: removal-unit,
-        )),
-      ))
-    }
-    let unit-conversion = si-conversions.at(unit-name, default: none)
-
-    if unit-conversion != none {
-      let factor = unit-conversion.at("factor", default: none)
-      let offset = unit-conversion.at("offset", default: none)
-      if factor != none or offset != none {
-        if factor != none {
-          let removal-unit = unit-conversion.unit
-          removal-unit.denominator.push(unit)
-          result = mul((
-            result,
-            const((
-              float: unit-conversion.factor,
-              info: zero.impl.parsing.parse-numeral(unit-conversion.factor),
-              unit: removal-unit,
-            )),
-          ))
-        }
-        if offset != none {}
-      } else {}
-      // if (
-      //   unit-conversion.at("offset", default: none) != none
-      //     and quantity.unit.numerator.len() == 1
-      //     and quantity.unit.denominator.len() == 0
-      // ) {
-      //   quantity.float += unit-conversion.offset
-      // }
-    }
+    (result, unit.at(0)) = apply-prefix(result, unit, true)
+    result = apply-unit-conversion(result, unit, true)
   }
   for unit in quantity.unit.denominator {
-    let prefix = if unit.at(0).len() != 1 { unit.at(0).first() }
-    let unit-name = unit.at(0)
-    if prefix != none and prefix in prefixes.keys() {
-      unit-name = unit-name.slice(prefix.len())
-    } else {
-      prefix = none
-    }
-    let unit-conversion = si-conversions.at(unit-name, default: none)
-
-    if unit-conversion != none {
-      if unit-conversion.at("factor", default: none) != none {
-        let removal-unit = unit-conversion.unit
-        (removal-unit.numerator, removal-unit.denominator) = (removal-unit.denominator, removal-unit.numerator)
-        removal-unit.numerator.push(unit)
-        result = mul(
-          (
-            result,
-            const((
-              float: 1 / unit-conversion.factor,
-              info: zero.impl.parsing.parse-numeral(1 / unit-conversion.factor),
-              unit: removal-unit,
-              args: arguments(),
-            )),
-          ),
-        )
-      }
-    }
+    (result, unit.at(0)) = apply-prefix(result, unit, false)
+    result = apply-unit-conversion(result, unit, false)
   }
 
+  if (result.args.at("exponent", default: none) == "eng") {
+    let named = result.args.named()
+    named.remove("exponent")
+    result.args = arguments(..result.args.pos(), ..named)
+  }
+
+  if not save-operations {
+    result.source = (head: "mul", data: (quantity,))
+  }
   return result
 }

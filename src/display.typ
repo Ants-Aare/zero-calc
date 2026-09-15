@@ -17,7 +17,11 @@
     if round == none and args != none {
       value.round = args.named().at("round", default: none)
       round = value.round
+      let named = args.named()
+      let x = named.remove("round", default: none)
+      value.args = arguments(..args.pos(), ..named)
     }
+
     if round != none {
       value.round.precision = calc.min(
         {
@@ -29,11 +33,6 @@
         value.at("pm", default: (none, range(15))).at(1).len(),
       )
       let x = value.round.remove("uncertainty-precision", default: none)
-    }
-    if args != none {
-      let named = args.named()
-      let x = named.remove("round", default: none)
-      value.args = arguments(args.pos(), named)
     }
     value.info.pm = none
   }
