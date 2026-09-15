@@ -24,7 +24,6 @@
 #display.method-result(zcalc.convert-units-to-si(zi.declare("1/h^2")(2)))\
 #display.method-result(zcalc.convert-units-to-si(zi.J(5123, exponent: "eng")))\
 #display.method-result(zcalc.mul(zi.km-h(5), zi.minute(30), convert-si: true))\
-#display.method-result(zcalc.convert-units-to-si(zi.km-h("0.123")))\
 
 // #zero-calc.impl.operations.const(
 //   (

@@ -144,8 +144,8 @@
   return utility.display(result)
 }
 
-#let convert-units-to-si(quantity) = {
+#let convert-units-to-si(quantity, save-operations: true) = {
   let value = utility.normalise-quantity(quantity)
-  value = operations.convert-units-to-si(value)
+  value = operations.convert-units-to-si(value, save-operations: save-operations)
   return utility.display(value)
 }

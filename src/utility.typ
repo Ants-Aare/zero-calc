@@ -315,9 +315,17 @@
 
 #let display(value) = {
   let result = if value.at("unit", default: none) == none {
-    num(value.info, round: as-round(value), ..value.at("args", default: ()))
+    if value.info.int == "" and value.info.frac == "" {
+      num(round: as-round(value), ..value.at("args", default: ()))
+    } else {
+      num(value.info, round: as-round(value), ..value.at("args", default: ()))
+    }
   } else {
-    zi.units.qty(value.info, value.unit, round: as-round(value), ..value.at("args", default: ()))
+    if value.info.int == "" and value.info.frac == "" {
+      zi.units.unit(value.unit, ..value.at("args", default: ()))
+    } else {
+      zi.units.qty(value.info, value.unit, round: as-round(value), ..value.at("args", default: ()))
+    }
   }
   ((create-result-metadata(value),) + result.children.slice(1)).join()
 }
@@ -356,8 +364,6 @@
 )
 
 #let zcalc-state = state("zcalc-state", default-state)
-
-
 
 #let normalise-quantity(candidate) = {
   let metadata = impl.utility.retrieve-metadata(candidate)
