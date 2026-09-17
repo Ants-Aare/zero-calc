@@ -1,4 +1,5 @@
 #import "utility.typ"
+#import "operations.typ"
 #import "units.typ"
 #import "@preview/zero:0.7.0"
 
@@ -10,6 +11,35 @@
 }
 
 #let display-info(value) = {
+  let apply-preferred-units(value, preferred-units) = {
+    if preferred-units == () {
+      return value
+    }
+
+    for rule in preferred-units {
+      if rule.match.unit == value.unit {
+        value.unit = rule.preferred.unit
+        if rule.factor != none {
+          value = operations.mul((value, operations.const(rule.factor)))
+        }
+      } else if not rule.exact-match {
+        let units-dict = units.unit-to-dict(value.unit)
+        let rule-units-dict = units.unit-to-dict(rule.match.unit)
+        if units.contains-unit(units-dict, rule-units-dict) {
+          if rule.factor != none {
+            value = operations.mul((value, operations.const(rule.factor)))
+          }
+          value.unit = units.multiply-unit(value.unit, (units.invert-unit(rule.match), rule.preferred))
+        } else if units.contains-unit(units-dict, rule-units-dict.map(x => -x)) {
+          value.unit = units.multiply-unit((value.unit, rule.match.unit, units.invert-unit(rule.preferred.unit)))
+          if rule.factor != none {
+            value = operations.div(value, operations.const(rule.factor))
+          }
+        }
+      }
+    }
+    return value
+  }
   let result = context {
     let displayed-value = if value.at("unit", default: none) == none {
       if value.info.int == "" and value.info.frac == "" {
@@ -20,7 +50,7 @@
     } else {
       let zcalc-state = utility.zcalc-state.get()
 
-      let value = units.apply-preferred-units(value, zcalc-state.preferred-units)
+      let value = apply-preferred-units(value, zcalc-state.preferred-units)
       if value.info.int == "" and value.info.frac == "" {
         zero.zi.units.unit(value.unit, ..value.at("args", default: ()))
       } else {

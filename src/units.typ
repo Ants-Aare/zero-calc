@@ -112,25 +112,3 @@
   }
   return true
 }
-
-#let apply-preferred-units(value, preferred-units) = {
-  if preferred-units == () {
-    return value
-  }
-
-  for rule in preferred-units {
-    if rule.match == value.unit {
-      value.unit = rule.preferred
-    } else if not rule.exact-match {
-      let units-dict = unit-to-dict(value.unit)
-      let rule-units-dict = unit-to-dict(rule.match)
-      if contains-unit(units-dict, rule-units-dict) {
-        value.unit = multiply-unit((value.unit, invert-unit(rule.match), rule.preferred))
-      } else if contains-unit(units-dict, rule-units-dict.map(x => -x)) {
-        value.unit = multiply-unit((value.unit, rule.match, invert-unit(rule.preferred)))
-      }
-    }
-  }
-
-  return value
-}

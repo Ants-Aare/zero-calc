@@ -156,13 +156,17 @@
   let normalise-unit(unit) = {
     let type = type(unit)
     return if type == function {
-      utility.impl.utility.retrieve-metadata((unit)()).at("unit", default: none)
+      let metadata = utility.impl.utility.retrieve-metadata(unit())
+      (unit: metadata.unit, alt: metadata.args.named().at("alt", default: auto))
     } else if type == dictionary {
       if unit.at("denominator", default: none) != none and unit.at("numerator", default: none) != none {
+        (unit: unit, alt: none)
+      } else {
         unit
       }
     } else if type(unit) == content {
-      utility.impl.utility.retrieve-metadata(unit).at("unit", default: none)
+      let metadata = utility.impl.utility.retrieve-metadata(unit) //.at("unit", default: none)
+      (unit: metadata.unit, alt: metadata.args.named().at("alt", default: auto))
     }
   }
   let new-state = (
@@ -170,6 +174,7 @@
       match: normalise-unit(rule.match),
       preferred: normalise-unit(rule.preferred),
       exact-match: rule.at("exact-match", default: true),
+      factor: rule.at("factor", default: none),
     )),
   )
 

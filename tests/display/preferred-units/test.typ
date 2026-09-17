@@ -16,9 +16,17 @@
     (match: zi.declare("kg m s^-2"), preferred: zi.newton, exact-match: false),
     (match: zi.declare("kg m^-1 s^-2"), preferred: zi.pascal, exact-match: false),
     (match: zi.declare("s^-1"), preferred: zi.hertz, exact-match: true),
+    (
+      match: zi.declare("mol s^-1"),
+      preferred: zi.declare("U", alt: "Enzyme units"),
+      exact-match: false,
+      factor: 60e6,
+    ),
+    (match: zi.m3, preferred: zi.liter, exact-match: false, factor: 1e3),
   ),
 )
 
+// #zi.declare("U", alt: "Enzyme units")(5)
 #zcalc.convert-units-to-si(zi.ohm(1))\
 #zcalc.convert-units-to-si(zi.volt(1))\
 #zcalc.convert-units-to-si(zi.newton(1))\
@@ -28,6 +36,8 @@
 #zcalc.convert-units-to-si(zi.watt(1))\
 #zcalc.convert-units-to-si(zi.joule(1))\
 #zcalc.convert-units-to-si(zi.hertz(1))\
+#zcalc.convert-units-to-si(zi.liter(5))\
+#zcalc.convert-units-to-si(zi.declare("L^-1")(5))\
 #zcalc.mul(zi.watt(5), zi.minute(30), convert-si: true, exponent: "eng")\
 
 
