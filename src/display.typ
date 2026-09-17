@@ -1,4 +1,5 @@
 #import "utility.typ"
+#import "units.typ"
 #import "@preview/zero:0.7.0"
 
 #let _method-prec-table = (add: 1, sub: 1, neg: 2, mul: 2.5, div: 2.5)
@@ -6,6 +7,32 @@
   let op = value.at("source", default: none)
   if op == none { return 1000 }
   _method-prec-table.at(op.head, default: 1000)
+}
+
+#let display-info(value) = {
+  let result = context {
+    let displayed-value = if value.at("unit", default: none) == none {
+      if value.info.int == "" and value.info.frac == "" {
+        zero.num(round: utility.as-round(value), ..value.at("args", default: ()))
+      } else {
+        zero.num(value.info, round: utility.as-round(value), ..value.at("args", default: ()))
+      }
+    } else {
+      let zcalc-state = utility.zcalc-state.get()
+
+      let value = units.apply-preferred-units(value, zcalc-state.preferred-units)
+      if value.info.int == "" and value.info.frac == "" {
+        zero.zi.units.unit(value.unit, ..value.at("args", default: ()))
+      } else {
+        zero.zi.units.qty(value.info, value.unit, round: utility.as-round(value), ..value.at("args", default: ()))
+      }
+    }
+
+    displayed-value.children.slice(1).join()
+  }
+
+  utility.create-result-metadata(value)
+  result
 }
 
 #let variable(value, show-error: true) = {
@@ -17,9 +44,6 @@
     if round == none and args != none {
       value.round = args.named().at("round", default: none)
       round = value.round
-      // let named = args.named()
-      // let x = named.remove("round", default: none)
-      // value.args = arguments(args.pos(), named)
     }
     if round != none {
       value.round.precision = calc.min(
@@ -41,7 +65,7 @@
     value.info.pm = none
   }
   let x = value.remove("source", default: none)
-  utility.display(value)
+  display-info(value)
 }
 
 #let method(value, show-error: false, depth: none, frozen: false) = {
@@ -173,7 +197,7 @@
       mode: round.mode,
     )
   }
-  utility.display((info: info, unit: value.at("unit", default: none), round: round))
+  display-info((info: info, unit: value.at("unit", default: none), round: round))
 }
 
 #let rss(errors) = {

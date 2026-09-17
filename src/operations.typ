@@ -1,8 +1,8 @@
 #import "@preview/zero:0.7.0"
 #import "units.typ"
 #import "utility.typ": (
-  as-float, as-round, as-uncertainty, base-si-units, create-info, get-e, get-places, get-sig-figs, normalise-constant,
-  normalise-quantity, prefixes, rss, si-conversions,
+  as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, normalise-constant,
+  normalise-quantity, prefixes, rss,
 )
 
 #let const = normalise-constant
@@ -488,11 +488,11 @@
 }
 
 #let apply-prefix(value, unit, in-numerator) = {
-  let prefix = if unit.at(0).len() != 1 { unit.at(0).first() }
+  let prefix = if type(unit.at(0)) != symbol and unit.at(0).len() != 1 { unit.at(0).first() }
   let unit-name = unit.at(0)
-  if prefix != none and prefix in prefixes.keys() and not unit-name in base-si-units {
+  if prefix != none and prefix in prefixes.keys() and not unit-name in units.base-si-units {
     let actual-unit = unit-name.slice(prefix.len())
-    if actual-unit in base-si-units or actual-unit in si-conversions.keys() or actual-unit == "g" {
+    if actual-unit in units.base-si-units or actual-unit in units.si-conversions.keys() or actual-unit == "g" {
       unit-name = actual-unit
     } else {
       prefix = none
@@ -530,7 +530,7 @@
 }
 
 #let apply-unit-conversion(value, unit, in-numerator, use-division: false) = {
-  let unit-conversion = si-conversions.at(unit.at(0), default: none)
+  let unit-conversion = units.si-conversions.at(unit.at(0), default: none)
 
   if unit-conversion == none {
     return value
@@ -538,8 +538,6 @@
 
   let factor = unit-conversion.at("factor", default: none)
   let offset = unit-conversion.at("offset", default: none)
-  // if factor != none or offset != none {
-  //   if factor != none {
 
   let removal-unit = unit-conversion.unit
   removal-unit.denominator.push(unit)
@@ -599,38 +597,20 @@
     value,
     multiplier,
   ))
-  // value = div(
-  //   value,
-  //   multiplier,
-  // )
+
+  if offset != none and (value.unit.numerator.len() == 1 and value.unit.denominator.len() == 0) {
+    value = add((
+      value,
+      const((
+        float: float(offset),
+        info: zero.impl.parsing.parse-numeral(offset),
+        unit: unit-conversion.unit,
+        args: arguments(),
+      )),
+    ))
+  }
 
   return value
-}
-//   if offset != none {}
-// } else {}
-// // if (
-// //   unit-conversion.at("offset", default: none) != none
-// //     and quantity.unit.numerator.len() == 1
-// //     and quantity.unit.denominator.len() == 0
-// // ) {
-// //   quantity.float += unit-conversion.offset
-// // }
-// //  if unit-conversion.at("factor", default: none) != none {
-//   //     let removal-unit = unit-conversion.unit
-//   //     (removal-unit.numerator, removal-unit.denominator) = (removal-unit.denominator, removal-unit.numerator)
-//   //     removal-unit.numerator.push(unit)
-//   //     result = mul(
-//   //       (
-//   //         result,
-//   //         const((
-//   //           float: 1 / unit-conversion.factor,
-//   //           info: zero.impl.parsing.parse-numeral(1 / unit-conversion.factor),
-//   //           unit: removal-unit,
-//   //           args: arguments(),
-//   //         )),
-//   //       ),
-//   //     )
-//   //   }
 }
 
 #let convert-units-to-si(quantity, save-operations: false) = {

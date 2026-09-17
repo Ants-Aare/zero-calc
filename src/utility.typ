@@ -1,5 +1,6 @@
 #import "@preview/zero:0.7.0": *
 #import impl.utility: *
+#import "units.typ"
 
 #let symbol-names = (
   math.alpha: "alpha",
@@ -52,15 +53,6 @@
   math.Omega: "Omega",
 )
 
-#let base-si-units = (
-  "A",
-  "cd",
-  "K",
-  "kg",
-  "m",
-  "mol",
-  "s",
-)
 
 #let prefixes = (
   "k": 3,
@@ -122,16 +114,18 @@
 #let as-float(value) = {
   if value.at("float", default: none) != none {
     value.float
-  } else if value.raw != none and (type(value.raw) == int or type(value.raw) == float) {
+  } else if value.at("raw", default: none) != none and (type(value.raw) == int or type(value.raw) == float) {
     value.raw
-  } else {
+  } else if value.at("info", default: none) != none {
     info-to-float(value.info)
+  } else {
+    0
   }
 }
 #let as-uncertainty(value) = {
   if value.at("uncertainty", default: none) != none {
     value.uncertainty
-  } else {
+  } else if value.at("info", default: none) != none {
     info-to-uncertainty(value.info)
   }
 }
@@ -312,52 +306,6 @@
   args: args,
 )
 #let create-result-metadata(value) = [#metadata(value)<calc-result>]
-
-#let display(value) = {
-  let result = if value.at("unit", default: none) == none {
-    if value.info.int == "" and value.info.frac == "" {
-      num(round: as-round(value), ..value.at("args", default: ()))
-    } else {
-      num(value.info, round: as-round(value), ..value.at("args", default: ()))
-    }
-  } else {
-    if value.info.int == "" and value.info.frac == "" {
-      zi.units.unit(value.unit, ..value.at("args", default: ()))
-    } else {
-      zi.units.qty(value.info, value.unit, round: as-round(value), ..value.at("args", default: ()))
-    }
-  }
-  ((create-result-metadata(value),) + result.children.slice(1)).join()
-}
-
-#let si-conversions = (
-  "min": (unit: (numerator: (("s", "1"),), denominator: ()), factor: "60"),
-  "h": (unit: (numerator: (("s", "1"),), denominator: ()), factor: "3600"),
-  "d": (unit: (numerator: (("s", "1"),), denominator: ()), factor: "86400"),
-  "Bq": (unit: (numerator: (), denominator: (("s", "1"),))),
-  "Hz": (unit: (numerator: (), denominator: (("s", "1"),))),
-  "H": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"), ("A", "2")))),
-  "J": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"),))),
-  "N": (unit: (numerator: (("kg", "1"), ("m", "1")), denominator: (("s", "2"),))),
-  "Pa": (unit: (numerator: ("kg", "1"), denominator: (("m", "1"), ("s", "2")))),
-  sym.Omega: (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"), ("A", "2")))),
-  "S": (unit: (numerator: (("s", "3"), ("A", "2")), denominator: (("kg", "1"), ("m", "2")))),
-  "kat": (unit: (numerator: (("mol", "1"),), denominator: (("s", "1"),))),
-  sym.degree + "C": (unit: (numerator: (("K", "1"),), denominator: ()), offset: "273.15"),
-  "C": (unit: (numerator: (("A", "1"), ("s", "1")), denominator: ())),
-  "Gy": (unit: (numerator: (("m", "2"),), denominator: (("s", "2"),))),
-  "F": (unit: (numerator: (("A", "2"), ("s", "4")), denominator: (("kg", "1"), ("m", "2")))),
-  "T": (unit: (numerator: (("kg", "1"),), denominator: (("s", "2"), ("A", "1")))),
-  "V": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"), ("A", "1")))),
-  "W": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"),))),
-  "au": (unit: (numerator: (("m", "1"),), denominator: ()), factor: "149597870700"),
-  "Da": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: "1.66053906892e-27"),
-  "eV": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"),)), factor: "1.602176634e-19"),
-  "ha": (unit: (numerator: (("m", "2"),), denominator: ()), factor: "1e4"),
-  "L": (unit: (numerator: (("m", "3"),), denominator: ()), factor: "1e-3"),
-  "t": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: "1e3"),
-  // "g": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: 0.001),
-)
 
 #let default-state = (
   preferred-units: (),

@@ -1,3 +1,41 @@
+#let base-si-units = (
+  "A",
+  "cd",
+  "K",
+  "kg",
+  "m",
+  "mol",
+  "s",
+)
+
+#let si-conversions = (
+  "min": (unit: (numerator: (("s", "1"),), denominator: ()), factor: "60"),
+  "h": (unit: (numerator: (("s", "1"),), denominator: ()), factor: "3600"),
+  "d": (unit: (numerator: (("s", "1"),), denominator: ()), factor: "86400"),
+  "Bq": (unit: (numerator: (), denominator: (("s", "1"),))),
+  "Hz": (unit: (numerator: (), denominator: (("s", "1"),))),
+  "H": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"), ("A", "2")))),
+  "J": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"),))),
+  "N": (unit: (numerator: (("kg", "1"), ("m", "1")), denominator: (("s", "2"),))),
+  "Pa": (unit: (numerator: (("kg", "1"),), denominator: (("m", "1"), ("s", "2")))),
+  sym.Omega: (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"), ("A", "2")))),
+  "S": (unit: (numerator: (("s", "3"), ("A", "2")), denominator: (("kg", "1"), ("m", "2")))),
+  "kat": (unit: (numerator: (("mol", "1"),), denominator: (("s", "1"),))),
+  sym.degree + "C": (unit: (numerator: (("K", "1"),), denominator: ()), offset: "273.15"),
+  "C": (unit: (numerator: (("A", "1"), ("s", "1")), denominator: ())),
+  "Gy": (unit: (numerator: (("m", "2"),), denominator: (("s", "2"),))),
+  "F": (unit: (numerator: (("A", "2"), ("s", "4")), denominator: (("kg", "1"), ("m", "2")))),
+  "T": (unit: (numerator: (("kg", "1"),), denominator: (("s", "2"), ("A", "1")))),
+  "V": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"), ("A", "1")))),
+  "W": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "3"),))),
+  "au": (unit: (numerator: (("m", "1"),), denominator: ()), factor: "149597870700"),
+  "Da": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: "1.66053906892e-27"),
+  "eV": (unit: (numerator: (("kg", "1"), ("m", "2")), denominator: (("s", "2"),)), factor: "1.602176634e-19"),
+  "ha": (unit: (numerator: (("m", "2"),), denominator: ()), factor: "1e4"),
+  "L": (unit: (numerator: (("m", "3"),), denominator: ()), factor: "1e-3"),
+  "t": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: "1e3"),
+)
+
 #let is-unitless(value) = {
   if value.at("unit", default: none) == none or (value.unit.numerator == () and value.unit.denominator == ()) {
     return true
@@ -18,6 +56,10 @@
     numerator: pairs.filter(x => x > 0).map(x => str(x)).pairs(),
     denominator: pairs.filter(x => x < 0).map(x => str(-x)).pairs(),
   )
+}
+
+#let unit-to-dict(unit) = if unit == none { (:) } else {
+  unit.numerator.to-dict().map(x => int(x)) + unit.denominator.to-dict().map(x => -int(x))
 }
 
 #let signed-pairs-to-unit(pairs) = if pairs == (:) { none } else {
@@ -53,4 +95,42 @@
   if (unit == none) { return none }
   let pairs = units-to-signed-pairs((unit,)).map(x => (x.at(0), x.at(1) / exponent))
   signed-pairs-to-unit(pairs)
+}
+
+#let contains-unit(unit, rule) = {
+  for (rule-unit, rule-exponent) in rule {
+    let matched-unit = unit.at(rule-unit, default: none)
+    if matched-unit == none {
+      return false
+    }
+    // if they have the same sign and larger exponent
+    if matched-unit * rule-exponent > 0 and calc.abs(matched-unit) >= calc.abs(rule-exponent) {
+      continue
+    } else {
+      return false
+    }
+  }
+  return true
+}
+
+#let apply-preferred-units(value, preferred-units) = {
+  if preferred-units == () {
+    return value
+  }
+
+  for rule in preferred-units {
+    if rule.match == value.unit {
+      value.unit = rule.preferred
+    } else if not rule.exact-match {
+      let units-dict = unit-to-dict(value.unit)
+      let rule-units-dict = unit-to-dict(rule.match)
+      if contains-unit(units-dict, rule-units-dict) {
+        value.unit = multiply-unit((value.unit, invert-unit(rule.match), rule.preferred))
+      } else if contains-unit(units-dict, rule-units-dict.map(x => -x)) {
+        value.unit = multiply-unit((value.unit, rule.match, invert-unit(rule.preferred)))
+      }
+    }
+  }
+
+  return value
 }

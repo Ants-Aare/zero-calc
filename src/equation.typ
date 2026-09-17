@@ -1,6 +1,7 @@
 #import "@preview/parsely:0.1.1"
 #import "arithmetic.typ"
 #import "utility.typ"
+#import "display.typ"
 #import "@preview/zero:0.7.0"
 
 #let to-tree(math) = {
@@ -16,7 +17,7 @@
       post: it => arithmetic.apply-operations(it, variables),
     ))
 
-    results.dedup(key: x => x.float).map(utility.display).join([, ])
+    results.dedup(key: x => x.float).map(display.display-info).join([, ])
   } else {
     let result = parsely.walk(
       tree,
@@ -24,7 +25,7 @@
     )
     result.boundary = true
     result.args = values
-    utility.display(result)
+    display.display-info(result)
   }
 }
 

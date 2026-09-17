@@ -1,6 +1,5 @@
 #import "/src/zero-calc.typ": *
 #import "@preview/zero:0.7.0": *
-#import "@preview/zero-calc:0.7.0"
 #set page(width: auto, height: auto, margin: .5em)
 
 // #set-num(round: (precision: 2, mode: "figures"))
@@ -24,6 +23,9 @@
 #display.method-result(zcalc.convert-units-to-si(zi.declare("1/h^2")(2)))\
 #display.method-result(zcalc.convert-units-to-si(zi.J(5123, exponent: "eng")))\
 #display.method-result(zcalc.mul(zi.km-h(5), zi.minute(30), convert-si: true))\
+#display.method-result(zcalc.convert-units-to-si(zi.degreeCelsius(25)))\
+
+
 
 // #zero-calc.impl.operations.const(
 //   (
