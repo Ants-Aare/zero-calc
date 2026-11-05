@@ -34,6 +34,7 @@
   "ha": (unit: (numerator: (("m", "2"),), denominator: ()), factor: "1e4"),
   "L": (unit: (numerator: (("m", "3"),), denominator: ()), factor: "1e-3"),
   "t": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: "1e3"),
+  "g": (unit: (numerator: (("kg", "1"),), denominator: ()), factor: "1e-3"),
 )
 
 #let is-unitless(value) = {
@@ -60,6 +61,11 @@
 
 #let unit-to-dict(unit) = if unit == none { (:) } else {
   unit.numerator.to-dict().map(x => int(x)) + unit.denominator.to-dict().map(x => -int(x))
+}
+
+#let equal(a, b) = {
+  let normalise(unit) = unit-to-dict(unit).pairs().filter(x => x.at(1) != 0).sorted()
+  normalise(a) == normalise(b)
 }
 
 #let signed-pairs-to-unit(pairs) = if pairs == (:) { none } else {

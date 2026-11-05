@@ -11,6 +11,7 @@
 }
 
 #let display-info(value) = {
+  value = utility.normalise-exponent(value)
   let apply-preferred-units(value, preferred-units) = {
     if preferred-units == () {
       return value

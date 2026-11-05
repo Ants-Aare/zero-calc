@@ -280,7 +280,16 @@
   if terms != () { calc.sqrt(terms.map(t => t * t).sum()) }
 }
 
+#let round-float-noise(x) = {
+  if x == none or x == 0 or type(x) != float { return x }
+  let e = calc.floor(calc.log(calc.abs(x), base: 10))
+  if e < -280 or e > 280 { return x }
+  calc.round(x, digits: calc.max(0, 13 - e))
+}
+
 #let create-info(value, uncertainty, e) = {
+  let value = round-float-noise(value)
+  let uncertainty = round-float-noise(uncertainty)
   let (integer, fractional) = impl.utility.shift-decimal-left(
     ..impl.parsing.decompose-unsigned-float-numeral(str(calc.abs(value))),
     digits: e,
@@ -368,4 +377,18 @@
     }
   }
   return (datas)
+}
+#let normalise-exponent(value) = {
+  let round = as-round(value)
+  let info = value.at("info", default: none)
+  if round == none or info == none or round.at("mode", default: none) != "figures" or info.e == none {
+    return value
+  }
+  let e = int(info.e)
+  let x = as-float(value)
+  if x == 0 { return value }
+  let mantissa = calc.abs(x) / calc.pow(10.0, e)
+  if calc.round(mantissa, digits: calc.max(0, round.precision - 1)) < 10 { return value }
+  value.info = create-info(x, as-uncertainty(value), e + 1)
+  value
 }

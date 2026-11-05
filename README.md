@@ -96,5 +96,7 @@ Use the `zero-calc.impl` namespace to access internal methods. The `utility.norm
 - zcalc.e
 - zcalc.tau
 - zcalc.inf
+- zcalc.convert-units-to-si(value)
+- zcalc.convert-units(value, unit), e.g. `zcalc.convert-units(zi.declare("m^3")(5e-5), zi.liter)`
 
 All of these calculations may also be used in mathematical equations. Any other unknown symbols will be understood as variables.

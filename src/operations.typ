@@ -13,7 +13,10 @@
 
 #let add(terms) = {
   let unit = terms.first().at("unit", default: none)
-  assert(terms.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
+  assert(
+    terms.all(x => units.equal(x.at("unit", default: none), unit)),
+    message: "All parameters must have the same unit.",
+  )
   let sum = terms.map(as-float).sum()
   let error = rss(terms.map(as-uncertainty))
   let target-e = get-e(terms, sum, "highest")
@@ -35,7 +38,10 @@
 #let sub(a, terms) = {
   let unit = a.at("unit", default: none)
   if type(terms) != array { terms = (terms,) }
-  assert(terms.all(x => x.at("unit", default: none) == unit), message: "All parameters must have the same unit.")
+  assert(
+    terms.all(x => units.equal(x.at("unit", default: none), unit)),
+    message: "All parameters must have the same unit.",
+  )
   let negative-terms = terms.map(x => {
     if x.at("float", default: none) != none { x.float = -x.float }
     x.info.sign = if x.info.sign == "-" { "+" } else { "-" }
@@ -511,8 +517,9 @@
       removal-unit = (numerator: removal-unit.denominator, denominator: removal-unit.numerator)
     }
     let sign = if in-numerator { 1 } else { -1 }
+    // grams are converted to kilograms directly: mg = 1e-6 kg
     let correction = if unit-name == "g" { -3 } else { 0 }
-    let exponent = (prefix-e * int(unit.at(1)) * sign) + correction
+    let exponent = (prefix-e + correction) * int(unit.at(1)) * sign
     let multiplier = const(
       (
         float: calc.pow(10, exponent),
@@ -526,7 +533,7 @@
       multiplier,
     ))
   }
-  return (value, unit-name)
+  return (value, if prefix != none and unit-name == "g" { "kg" } else { unit-name })
 }
 
 #let apply-unit-conversion(value, unit, in-numerator, use-division: false) = {
@@ -614,6 +621,7 @@
 }
 
 #let convert-units-to-si(quantity, save-operations: false) = {
+  if units.is-unitless(quantity) { return quantity }
   let result = quantity
   for unit in quantity.unit.numerator {
     (result, unit.at(0)) = apply-prefix(result, unit, true)
@@ -630,8 +638,38 @@
     result.args = arguments(..result.args.pos(), ..named)
   }
 
-  if not save-operations {
+  if not save-operations and result != quantity {
     result.source = (head: "mul", data: (quantity,))
   }
+  return result
+}
+#let convert-units(quantity, unit, args: arguments()) = {
+  let one = (float: 1, info: (int: "1", frac: "", sign: "+", pm: none, e: none), unit: unit, args: arguments())
+  let one-si = convert-units-to-si(one)
+  assert(
+    not unit.numerator.any(x => units.si-conversions.at(x.at(0), default: (:)).at("offset", default: none) != none),
+    message: "convert-units: units with an offset (°C) are not supported as target",
+  )
+  let si = convert-units-to-si(quantity)
+  assert(
+    units.equal(si.at("unit", default: none), one-si.at("unit", default: none)),
+    message: "convert-units: cannot convert " + repr(quantity.at("unit", default: none)) + " into " + repr(unit),
+  )
+  let factor = as-float(one-si)
+  let result = mul((
+    si,
+    const((
+      float: 1 / factor,
+      info: create-info(1 / factor, none, get-e(none, 1 / factor, "value")),
+      unit: units.multiply-unit((unit, units.invert-unit(one-si.unit))),
+      args: arguments(),
+    )),
+  ))
+  let named = quantity.at("args", default: none)
+  named = if named == none { (:) } else { named.named() }
+  let _ = named.remove("alt", default: none)
+  result.unit = unit
+  result.args = arguments(..named, ..args.named())
+  result.source = (head: "mul", data: (quantity,))
   return result
 }
