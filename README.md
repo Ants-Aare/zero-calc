@@ -9,8 +9,8 @@ It's built directly on top of [Zero](https://typst.app/universe/package/zero), s
 The zcalc namespace can replace regular calc function calls in most cases. Use zero quantities or numbers to perform calculations or pass in floats, strings or content, which will be parsed using zero. The units are automatically adapt and uncertainties will be combined properly.
 
 ```typst
-#import "@preview/zero:0.7.0": *
-#import "@preview/zero-calc:0.7.0": *
+#import "@preview/zero:0.7.1": *
+#import "@preview/zero-calc:0.7.1": *
 #zcalc.div(m[30+-0.3], s[5+-0.4])
 ```
 

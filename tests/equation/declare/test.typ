@@ -1,4 +1,4 @@
-#import "@preview/zero:0.7.0": *
+#import "@preview/zero:0.7.1": *
 #import "/src/zero-calc.typ": *
 #set page(width: auto, height: auto, margin: .5em)
 

@@ -1,4 +1,4 @@
-#import "@preview/zero:0.7.0": *
+#import "@preview/zero:0.7.1": *
 #import impl.utility: *
 #import "units.typ"
 

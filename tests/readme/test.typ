@@ -1,4 +1,4 @@
-#import "@preview/zero:0.7.0": *
+#import "@preview/zero:0.7.1": *
 #import "/src/zero-calc.typ": *
 #import "@preview/parsely:0.1.1"
 #set page(width: auto, height: auto, margin: .5em)

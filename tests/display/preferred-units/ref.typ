@@ -1,4 +1,4 @@
-#import "@preview/zero:0.7.0": *
+#import "@preview/zero:0.7.1": *
 #set page(width: auto, height: auto, margin: .5em)
 #set-unit(fraction: "fraction")
 

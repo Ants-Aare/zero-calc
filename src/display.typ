@@ -1,7 +1,7 @@
 #import "utility.typ"
 #import "operations.typ"
 #import "units.typ"
-#import "@preview/zero:0.7.0"
+#import "@preview/zero:0.7.1"
 
 #let _method-prec-table = (add: 1, sub: 1, neg: 2, mul: 2.5, div: 2.5)
 #let _method-prec(value) = {
