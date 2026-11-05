@@ -305,6 +305,7 @@
   info: info,
   args: args,
 )
+
 #let create-result-metadata(value) = [#metadata(value)<calc-result>]
 
 #let default-state = (

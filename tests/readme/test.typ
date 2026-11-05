@@ -27,12 +27,3 @@ $
 #kinetic-energy-math
 #let kinetic-energy-function = equation.define(kinetic-energy-math)
 #display.method-result(kinetic-energy-function(m: g[10], v: zcalc.div(m[30], s[5.0])))
-
-#pagebreak()
-
-#let kinetic-energy-tree = equation.to-tree(kinetic-energy-math)
-#let velocity-tree = equation.isolate-variable(kinetic-energy-tree, $v$)
-#math.equation(display.equation(velocity-tree.first()), block: true)
-
-#equation.calculate-tree(velocity-tree, m: g[10], E-kin: g-m2-s-2[180])
-

@@ -1,0 +1,3 @@
+[submodule "src/lib/symbolica-typst-plugin"]
+	path = src/lib/symbolica-typst-plugin
+	url = https://github.com/symbolica-dev/symbolica-typst-plugin/
