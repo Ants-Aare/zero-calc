@@ -1,24 +1,14 @@
-#import "@preview/zero:0.7.1": *
+// Variables of an equation may be functions (e.g. another equation) that are evaluated with the same variable scope.
 #import "/src/zero-calc.typ": *
+#import "@preview/zero:0.7.1": *
+#import "/tests/helpers.typ": cases, check
 #set page(width: auto, height: auto, margin: .5em)
-#set-unit(fraction: "fraction")
 
-#let m = zi.meter
-#let s = zi.second
-#let m-s = zi.m-s
-#let kg = zi.kilogram
-#let m-s2 = zi.m-s2
-
-#let acceleration-formula = $a times t$
-#let kinetic-energy-formula = $1/2 m_1 v^2$
-
-#acceleration-formula\
-#kinetic-energy-formula
-
-#let acceleration = equation.define(acceleration-formula)
-#let kinetic-energy = equation.define(kinetic-energy-formula)
-#acceleration(t: s("5"), a: m-s2("2"))
-#m-s(10)
-
-#kinetic-energy(m-1: zi.kg("75.000"), v: m-s("1.0e1"))\
-#kinetic-energy(m-1: zi.kg("75.0"), t: s("5.0"), a: m-s2("2.0"), v: acceleration)
+#cases(
+  // 1: acceleration * time
+  check(equation.define($a times t$)(t: zi.s("5"), a: zi.m-s2("2")), float: 10),
+  // 2: kinetic energy from a given velocity
+  check(equation.define($1/2 m_1 v^2$)(m-1: zi.kg("75.000"), v: zi.m-s("1.0e1")), float: 3750),
+  // 3: velocity variable is another equation
+  check(equation.define($1/2 m_1 v^2$)(m-1: zi.kg("75.0"), t: zi.s("5.0"), a: zi.m-s2("2.0"), v: equation.define($a times t$)), float: 3750),
+)
