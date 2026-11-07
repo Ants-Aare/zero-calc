@@ -43,4 +43,8 @@
   zi.hertz("2.5e-1"),
   // 19: units without a rule stay as they are
   zi.declare("m s")("6.0"),
+  // 20: factor rule: mol/min to enzyme units
+  zi.declare("U", alt: "Enzyme units")("1.0e6"),
+  // 21: partial match keeps the remaining units
+  zi.declare("m V")("6.0"),
 )

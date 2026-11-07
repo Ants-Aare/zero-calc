@@ -11,4 +11,6 @@
   display.error-method-result(zcalc.mul("2.0+-0.1", "3.0+-0.1")),
   // 3: quantity
   display.error-method-result(zcalc.div(zi.m("30+-0.3"), zi.s("5+-0.4"))),
+  // 4: error-method-result of sub
+  display.error-method-result(zcalc.sub("5.0+-0.1", "2.0+-0.2")),
 )

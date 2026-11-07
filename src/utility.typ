@@ -222,7 +222,8 @@
   }
   let sig-figs = infos.map(x => {
     let (info, round) = x
-    let value = (info.int + info.frac).trim("0", at: start).len()
+    let digits = (info.int + info.frac).trim("0", at: start)
+    let value = if digits.len() == 0 { info.frac.len() + 1 } else { digits.len() }
     let uncertainty = if info.pm != none { (info.pm.at(0) + info.pm.at(1)).trim("0", at: start).len() } else { int.max }
     if round != none {
       if round.at("mode", default: none) == "places" {
@@ -257,7 +258,8 @@
 
 #let get-highest-e(terms) = calc.max(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
 #let get-lowest-e(terms) = calc.min(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
-#let get-value-e(value) = if value != 0 { calc.floor(calc.log(calc.abs(value), base: 10)) } else { 0 }
+#let is-finite(x) = type(x) != float or (x == x and calc.abs(x) != float.inf)
+#let get-value-e(value) = if value != 0 and is-finite(value) { calc.floor(calc.log(calc.abs(value), base: 10)) } else { 0 }
 
 #let get-e(terms, value, mode) = {
   impl.rounding.assert-option(mode, "e mode", ("highest", "lowest", "value"))
@@ -281,13 +283,15 @@
 }
 
 #let round-float-noise(x) = {
-  if x == none or x == 0 or type(x) != float { return x }
-  let e = calc.floor(calc.log(calc.abs(x), base: 10))
-  if e < -280 or e > 280 { return x }
-  calc.round(x, digits: calc.max(0, 13 - e))
+  if x == none or x == 0 or type(x) != float or not is-finite(x) { return x }
+  let n = 12 - calc.floor(calc.log(calc.abs(x), base: 10))
+  if calc.abs(n) > 22 { return x }
+  let scale = float("1e" + str(calc.abs(n)).replace("−", "-"))
+  if n >= 0 { float(calc.round(x * scale)) / scale } else { float(calc.round(x / scale)) * scale }
 }
 
 #let create-info(value, uncertainty, e) = {
+  if not is-finite(value) { return impl.parsing.parse-numeral(value) }
   let value = round-float-noise(value)
   let uncertainty = round-float-noise(uncertainty)
   let (integer, fractional) = impl.utility.shift-decimal-left(
@@ -378,17 +382,22 @@
   }
   return (datas)
 }
+#let round-significant(mantissa, precision) = {
+  let places = precision - 1 - calc.floor(calc.log(mantissa, base: 10))
+  let scale = float("1e" + str(calc.abs(places)).replace("−", "-"))
+  if places >= 0 { calc.round(mantissa * scale) / scale } else { calc.round(mantissa / scale) * scale }
+}
 #let normalise-exponent(value) = {
   let round = as-round(value)
   let info = value.at("info", default: none)
-  if round == none or info == none or round.at("mode", default: none) != "figures" or info.e == none {
-    return value
-  }
-  let e = int(info.e)
+  if round == none or info == none or round.at("mode", default: none) != "figures" { return value }
   let x = as-float(value)
-  if x == 0 { return value }
+  if x == 0 or not is-finite(x) { return value }
+  let e = if info.e == none { 0 } else { int(info.e) }
   let mantissa = calc.abs(x) / calc.pow(10.0, e)
-  if calc.round(mantissa, digits: calc.max(0, round.precision - 1)) < 10 { return value }
-  value.info = create-info(x, as-uncertainty(value), e + 1)
+  let rounded = round-significant(mantissa, round.precision)
+  let limit = if e == 0 { 100 } else { 10 }
+  if rounded < limit { return value }
+  value.info = create-info(x, as-uncertainty(value), if e == 0 { 2 } else { e + 1 })
   value
 }

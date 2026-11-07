@@ -117,4 +117,16 @@
   check(zcalc.mul("7.0", "5.0"), float: 35),
   // 56: big exponent notation
   check(zcalc.mul("3.4e3", "5.0e1"), float: 170000),
+  // 57: 9.9 * 10.1
+  zcalc.mul("9.9", "10.1"),
+  // 58: 9.5 * 10.5
+  zcalc.mul("9.5", "10.5"),
+  // 59: m * m^-1
+  zcalc.mul(zi.m("2.0"), zi.declare("m^-1")("3.0")),
+  // 60: mul(0 +- 1, 5)
+  check(zcalc.mul("0+-1", "5"), float: 0, uncertainty: 5),
+  // 61: mul(5, 0 +- 1)
+  check(zcalc.mul("5", "0+-1"), float: 0, uncertainty: 5),
+  // 62: mul(0.0 +- 0.1, 3.0 +- 0.1)
+  check(zcalc.mul("0.0+-0.1", "3.0+-0.1"), float: 0, uncertainty: 0.30000000000000004),
 )

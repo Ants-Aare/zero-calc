@@ -12,14 +12,30 @@
 
 #let display-info(value) = {
   value = utility.normalise-exponent(value)
+  // infinity is shown as a symbol, there is nothing to round
+  if not utility.is-finite(utility.as-float(value)) {
+    value.round = none
+    let named = value.at("args", default: arguments()).named()
+    let _ = named.remove("round", default: none)
+    value.args = arguments(..named)
+  }
   let apply-preferred-units(value, preferred-units) = {
     if preferred-units == () {
       return value
     }
 
+    // the old alt text describes the old unit, use the one of the preferred unit (auto: let zero generate it)
+    let use-unit(value, unit, rule) = {
+      value.unit = unit
+      let named = value.at("args", default: arguments()).named()
+      named.insert("alt", rule.preferred.at("alt", default: auto))
+      value.args = arguments(..value.at("args", default: arguments()).pos(), ..named)
+      value
+    }
+
     for rule in preferred-units {
       if rule.match.unit == value.unit {
-        value.unit = rule.preferred.unit
+        value = use-unit(value, rule.preferred.unit, rule)
         if rule.factor != none {
           value = operations.mul((value, operations.const(rule.factor)))
         }
@@ -30,7 +46,7 @@
           if rule.factor != none {
             value = operations.mul((value, operations.const(rule.factor)))
           }
-          value.unit = units.multiply-unit(value.unit, (units.invert-unit(rule.match), rule.preferred))
+          value = use-unit(value, units.multiply-unit((value.unit, units.invert-unit(rule.match.unit), rule.preferred.unit)), rule)
         } else if units.contains-unit(units-dict, rule-units-dict.map(x => -x)) {
           value.unit = units.multiply-unit((value.unit, rule.match.unit, units.invert-unit(rule.preferred.unit)))
           if rule.factor != none {
@@ -99,16 +115,22 @@
   display-info(value)
 }
 
+#let _expands(value, depth, frozen) = {
+  let free = frozen and not value.at("boundary", default: false)
+  value.at("source", default: none) != none and (free or depth == none or depth > 0)
+}
+
 #let method(value, show-error: false, depth: none, frozen: false) = {
   let _method-wrap(value, min-prec, show-error: false, depth: none, frozen: false) = {
     let rendered = method(value, show-error: show-error, depth: depth, frozen: frozen)
-    if _method-prec(value) < min-prec { $(#rendered)$ } else { rendered }
+    let needs-parentheses = _expands(value, depth, frozen) and _method-prec(value) < min-prec
+    if needs-parentheses { $(#rendered)$ } else { rendered }
   }
   value = utility.normalise-quantity(value)
 
   let is-boundary = value.at("boundary", default: false)
   let free = frozen and not is-boundary
-  let expand = value.at("source", default: none) != none and (free or depth == none or depth > 0)
+  let expand = _expands(value, depth, frozen)
 
   let child-depth = if depth == none {
     none
@@ -277,7 +299,8 @@
   if expand {
     let operation = value.source.head
     if operation == "add" or operation == "sub" {
-      let errors = _deduplicate-errors(value.source.data, consider-value: false)
+      let terms = if operation == "sub" { (value.source.data.first(),) + value.source.data.last() } else { value.source.data }
+      let errors = _deduplicate-errors(terms, consider-value: false)
       if errors.len() == 0 { return $0$ }
       rss(errors.map(x => (count: x.count, error: error-method(x.error, depth: child-depth, frozen: frozen))))
     } else if operation == "abs" or operation == "neg" {
@@ -317,14 +340,14 @@
           count: 1,
           error: context {
             let product = zero.impl.num-state.get().product
-            $#variable(index, show-error: false) product #variable(value, show-error: false) product #error-method(radicand, depth: child-depth, frozen: frozen)/#variable(radicand, show-error: false)$
+            $#variable(value, show-error: false) product #error-method(radicand, depth: child-depth, frozen: frozen)/(#variable(index, show-error: false) product #variable(radicand, show-error: false))$
           },
         ))
       }
       if _has-error(index) {
         terms.push((
           count: 1,
-          error: $#variable(value, show-error: false) dot ln(#variable(radicand, show-error: false)) dot #error-method(index, depth: child-depth, frozen: frozen)$,
+          error: $#variable(value, show-error: false) dot ln(#variable(radicand, show-error: false)) dot #error-method(index, depth: child-depth, frozen: frozen) / #variable(index, show-error: false)^2$,
         ))
       }
       if terms.len() == 0 { return $0$ }

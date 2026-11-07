@@ -43,15 +43,15 @@
   // 19: tau / 2
   num("3"),
   // 20: tau / 2 (constant)
-  num("3.1415926535898"),
+  num("3.14159265359"),
   // 21: pi + pi
-  num("6.2831853071796"),
+  num("6.28318530718"),
   // 22: e squared
-  num("7.3890560989307"),
+  num("7.389056098931"),
   // 23: ln(e) = 1
   num("1"),
   // 24: sqrt(pi)
-  num("1.7724538509055"),
+  num("1.772453850906"),
   // 25: sin(pi/6) with a constant divisor
   num("0.5"),
   // 26: avogadro (from the README)
@@ -76,4 +76,14 @@
   num("9.59e-1"),
   // 36: abs of constant
   num(calc.pi),
+  // 37: 1 + inf
+  num(calc.inf),
+  // 38: inf + inf
+  num(calc.inf),
+  // 39: 2 * inf
+  num(calc.inf),
+  // 40: 1e300 * 1e300 overflows
+  num(calc.inf),
+  // 41: 10 ^ 400 overflows
+  num(calc.inf),
 )

@@ -80,4 +80,12 @@
   num("-1.67+-0.07"),
   // 38: quantities with uncertainty
   zi.declare("m/s")("2.32+-0.10"),
+  // 39: m / m
+  num("2.0"),
+  // 40: (m/s) / (m/s)
+  num("2.0"),
+  // 41: km / m with convert-si
+  num("2.0e3"),
+  // 42: div(0 +- 1, 5)
+  num("0.0+-0.2"),
 )

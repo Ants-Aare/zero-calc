@@ -19,4 +19,6 @@
   display.method-result(zcalc.convert-units-to-si(zi.km("1.5"))),
   // 7: conversion with a compound unit
   display.method-result(zcalc.convert-units-to-si(zi.km-h("3.6"))),
+  // 8: method-result of neg
+  display.method-result(zcalc.neg("5.0")),
 )

@@ -23,4 +23,6 @@
   check(zcalc.exp(zcalc.ln("5.0")), float: 5),
   // 9: ln of exp
   check(zcalc.ln(zcalc.exp("2.50")), float: 2.5),
+  // 10: exp(0.0)
+  check(zcalc.exp("0.0"), float: 1),
 )

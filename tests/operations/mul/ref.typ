@@ -45,7 +45,7 @@
   // 20: pi is a constant
   num("6.3"),
   // 21: integer constant times pi
-  num("6.2831853071796"),
+  num("6.28318530718"),
   // 22: relative uncertainties add in quadrature
   num("2.0+-0.3e2"),
   // 23: negative product keeps a positive uncertainty
@@ -116,4 +116,16 @@
   num("35"),
   // 56: big exponent notation
   num("1.7e5"),
+  // 57: 9.9 * 10.1
+  num("1.0e2"),
+  // 58: 9.5 * 10.5
+  num("1.0e2"),
+  // 59: m * m^-1
+  num("6.0"),
+  // 60: mul(0 +- 1, 5)
+  num("0+-5"),
+  // 61: mul(5, 0 +- 1)
+  num("0+-5"),
+  // 62: mul(0.0 +- 0.1, 3.0 +- 0.1)
+  num("0.0+-0.3"),
 )

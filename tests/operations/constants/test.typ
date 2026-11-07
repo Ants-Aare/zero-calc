@@ -77,4 +77,14 @@
   check(zcalc.mul(zcalc.sin(zcalc.const("0.5")), "2.00"), float: 0.9588510772084060),
   // 36: abs of constant
   zcalc.abs(zcalc.pi),
+  // 37: 1 + inf
+  zcalc.add("1", zcalc.inf),
+  // 38: inf + inf
+  zcalc.add(zcalc.inf, zcalc.inf),
+  // 39: 2 * inf
+  zcalc.mul("2", zcalc.inf),
+  // 40: 1e300 * 1e300 overflows
+  zcalc.mul("1e300", "1e300"),
+  // 41: 10 ^ 400 overflows
+  zcalc.pow("10", "400"),
 )

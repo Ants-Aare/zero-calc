@@ -59,4 +59,22 @@
   check(zcalc.atan(zcalc.div("3.0", "4.0")), float: 36.86989764584402),
   // 27: atan(0.5)
   check(zcalc.atan("0.5"), float: 26.56505117707799),
+  // 28: asin(0.5) in arcseconds
+  check(zcalc.asin("0.5", unit: sym.prime.double), float: 108000),
+  // 29: acos(0.5) in arcseconds
+  check(zcalc.acos("0.5", unit: sym.prime.double), float: 216000),
+  // 30: atan(1.0) in arcseconds
+  check(zcalc.atan("1.0", unit: sym.prime.double), float: 162000),
+  // 31: acos(0.0)
+  check(zcalc.acos("0.0"), float: 90),
+  // 32: acos(0)
+  check(zcalc.acos("0"), float: 90),
+  // 33: asin(0.50 +- 0.01)
+  check(zcalc.asin("0.50+-0.01"), float: 30, uncertainty: 0.6615946745061505),
+  // 34: acos(0.50 +- 0.01)
+  check(zcalc.acos("0.50+-0.01"), float: 60, uncertainty: 0.6615946745061505),
+  // 35: atan(1.00 +- 0.01)
+  check(zcalc.atan("1.00+-0.01"), float: 45, uncertainty: 0.2864788975654116),
+  // 36: asin(0.50 +- 0.01) in arcminutes
+  check(zcalc.asin("0.50+-0.01", unit: sym.prime), float: 1800, uncertainty: 39.69568047036903),
 )

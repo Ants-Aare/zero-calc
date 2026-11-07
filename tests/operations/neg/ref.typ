@@ -40,6 +40,22 @@
   num("5.0"),
   // 18: convert-si
   zi.m("-5.0e-3"),
-  // 19: named argument
-  num("-5.0e0", exponent: "sci"),
+  // 19: stored float of neg(m)
+  zi.m("-5.0"),
+  // 20: neg(m) + m
+  zi.m("-4.0"),
+  // 21: neg(num) + 1
+  num("-4.0"),
+  // 22: neg(m) * m
+  zi.declare("m^2")("-10"),
+  // 23: neg(num with uncertainty) * 2
+  num("-10+-0.2"),
+  // 24: m - neg(m)
+  zi.m("6.0"),
+  // 25: neg(0)
+  num("0"),
+  // 26: neg(0.0)
+  num("0.0"),
+  // 27: neg(0.0 +- 0.1)
+  num("0.0+-0.1"),
 )

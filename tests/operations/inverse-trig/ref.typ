@@ -58,4 +58,22 @@
   zi.degree("37"),
   // 27: atan(0.5)
   zi.degree("30"),
+  // 28: asin(0.5) in arcseconds
+  zi.arcsecond("1e5"),
+  // 29: acos(0.5) in arcseconds
+  zi.arcsecond("2e5"),
+  // 30: atan(1.0) in arcseconds
+  zi.arcsecond("1.6e5"),
+  // 31: acos(0.0)
+  zi.degree("90"),
+  // 32: acos(0)
+  zi.degree("90"),
+  // 33: asin(0.50 +- 0.01)
+  zi.degree("30.0+-0.7"),
+  // 34: acos(0.50 +- 0.01)
+  zi.degree("60.0+-0.7"),
+  // 35: atan(1.00 +- 0.01)
+  zi.degree("45.0+-0.3"),
+  // 36: asin(0.50 +- 0.01) in arcminutes
+  zi.arcminute("1.80+-0.04e3"),
 )

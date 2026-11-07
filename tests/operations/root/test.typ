@@ -53,4 +53,16 @@
   check(zcalc.root(zcalc.pow("3.0", "3"), "3"), float: 3),
   // 24: decimal-looking index
   check(zcalc.root("489.0", "3.0"), float: 7.878368425460935),
+  // 25: sqrt(cm^2, convert-si)
+  check(zcalc.sqrt(zi.declare("cm^2")("4.0"), convert-si: true), float: 0.02),
+  // 26: sqrt(9.0 +- 0.3)
+  check(zcalc.sqrt("9.0+-0.3"), float: 3, uncertainty: 0.05),
+  // 27: cbrt(27.0 +- 0.3)
+  check(zcalc.root("27.0+-0.3", "3"), float: 3, uncertainty: 0.011111111111111112),
+  // 28: 4th root of 16.0 +- 0.4
+  check(zcalc.root("16.0+-0.4", "4"), float: 2, uncertainty: 0.0125),
+  // 29: sqrt(100 +- 2)
+  check(zcalc.sqrt("100+-2"), float: 10, uncertainty: 0.1),
+  // 30: uncertain index: 489^(1/(3 +- 0.1))
+  check(zcalc.root("489", "3+-0.10"), float: 7.878368425460935, uncertainty: 0.542063479067639),
 )

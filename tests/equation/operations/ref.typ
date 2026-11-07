@@ -91,4 +91,10 @@
   num("2.5"),
   // 43: pi and e are known symbols
   num("13"),
+  // 44: arcsin(x)
+  zi.degree("30"),
+  // 45: arccos(x)
+  zi.degree("60"),
+  // 46: arctan(x)
+  zi.degree("45"),
 )

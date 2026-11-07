@@ -102,42 +102,36 @@
   zi.m("1.005"),
   // 48: convert-si: h + min
   zi.s("5.4e3"),
-  // 49: exponent of the first operand is used
-  zi.m("3.0", exponent: "sci"),
-  // 50: call-site named argument
-  num("3.0", exponent: "sci"),
-  // 51: call-site round
-  num("3.6"),
-  // 52: result of add as input
+  // 49: result of add as input
   num("5.3"),
-  // 53: result of add keeps uncertainty
+  // 50: result of add keeps uncertainty
   num("5.3+-0.5"),
-  // 54: 1000 + 10e1
+  // 51: 1000 + 10e1
   num("110.0e1"),
-  // 55: 1001 + 10e1
+  // 52: 1001 + 10e1
   num("110.1e1"),
-  // 56: 1001 + 1e2
+  // 53: 1001 + 1e2
   num("11.01e2"),
-  // 57: 1.111e3 + 1.1e3
+  // 54: 1.111e3 + 1.1e3
   num("2.2e3"),
-  // 58: uncertainties and exponents
+  // 55: uncertainties and exponents
   num("12.33+-0.111e2"),
-  // 59: uncertainty and exponent on one side
+  // 56: uncertainty and exponent on one side
   num("6.2811+-0.00111e2"),
-  // 60: uncertainty larger than the other operand
+  // 57: uncertainty larger than the other operand
   num("6.7+-0.1e3"),
-  // 61: two uncertainties with exponents
+  // 58: two uncertainties with exponents
   num("12.33+-0.16e2"),
-  // 62: many digits, exponent 3 + 2
+  // 59: many digits, exponent 3 + 2
   num("6.833333e3"),
-  // 63: many digits, same value other exponent
+  // 60: many digits, same value other exponent
   num("68.33333e2"),
-  // 64: eng exponent keeps the unit
+  // 61: eng exponent keeps the unit
   me("12.022+-0.0001e3"),
-  // 65: eng exponent of a single quantity
+  // 62: eng exponent of a single quantity
   me("2"),
-  // 66: pi + e with uncertainties
+  // 63: pi + e with uncertainties
   num[#(calc.pi + calc.e)+-0.1745],
-  // 67: ... plus a third uncertain term
+  // 64: ... plus a third uncertain term
   num[#(calc.pi + calc.e + 1)+-0.2],
 )

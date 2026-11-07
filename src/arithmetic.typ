@@ -149,11 +149,11 @@
     operations.cos(args.first())
   } else if head == "tan" {
     operations.tan(args.first())
-  } else if head == "asin" {
+  } else if head == "asin" or head == "arcsin" {
     operations.asin(args.first())
-  } else if head == "acos" {
+  } else if head == "acos" or head == "arccos" {
     operations.acos(args.first())
-  } else if head == "atan" {
+  } else if head == "atan" or head == "arctan" {
     operations.atan(args.first())
   } else {
     panic(head)

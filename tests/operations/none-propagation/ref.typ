@@ -50,4 +50,16 @@
   "none",
   // 23: none is not zero
   "none",
+  // 24: sin
+  "none",
+  // 25: cos
+  "none",
+  // 26: tan
+  "none",
+  // 27: asin
+  "none",
+  // 28: acos
+  "none",
+  // 29: atan
+  "none",
 )

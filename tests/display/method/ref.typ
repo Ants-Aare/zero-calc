@@ -87,4 +87,14 @@
   $(#num("1.0") + #num("2.0")) times #num("3.0")$,
   // 41: equation result with depth 1 stops at variables
   $(#num("2.0") + #num("2.0")) times #num("3.0")$,
+  // 42: mul(add, 3.0), depth 1
+  $#num("3.0") times #num("3.0")$,
+  // 43: pow(add, 2), depth 1
+  $#num("3.0")^#num("2")$,
+  // 44: neg(5.0)
+  $-#num("5.0")$,
+  // 45: neg(-5.0)
+  $-#num("-5.0")$,
+  // 46: abs(-5.0)
+  $abs(#num("-5.0"))$,
 )

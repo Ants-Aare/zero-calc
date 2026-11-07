@@ -55,4 +55,10 @@
   display.error-method(zcalc.add(zcalc.mul("2.0+-0.1", "3.0+-0.1"), "1.0+-0.2")),
   // 25: depth 0 shows only the error
   display.error-method(zcalc.mul("2.0+-0.1", "3.0+-0.1"), depth: 0),
+  // 26: sub
+  display.error-method(zcalc.sub("5.0+-0.1", "2.0+-0.2")),
+  // 27: sub, equal errors
+  display.error-method(zcalc.sub("5.0+-0.1", "2.0+-0.1")),
+  // 28: root: radicand term uses y / (n x)
+  display.error-method(zcalc.sqrt("9.0+-0.3")),
 )

@@ -92,4 +92,10 @@
   check(equation.define($0.5 a$)(a: "5.0"), float: 2.5),
   // 43: pi and e are known symbols
   check(equation.define($pi r^2$)(r: "2.0"), float: 4*calc.pi),
+  // 44: arcsin(x)
+  check(equation.define($arcsin(x)$)(x: "0.5"), float: 30),
+  // 45: arccos(x)
+  check(equation.define($arccos(x)$)(x: "0.5"), float: 60),
+  // 46: arctan(x)
+  check(equation.define($arctan(x)$)(x: "1.0"), float: 45),
 )

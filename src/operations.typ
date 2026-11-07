@@ -53,29 +53,35 @@
 }
 
 #let neg(term) = {
-  term.info.sign = if term.info.sign == "-" { "+" } else { "-" }
+  let original = term
+  let value = as-float(term)
+  let info = term.info
+  if value != 0 { info.sign = if info.sign == "-" { "+" } else { "-" } }
   return (
-    float: -as-float(term),
+    float: if value == 0 { value } else { -value },
     uncertainty: as-uncertainty(term),
-    info: term.info,
+    info: info,
     round: as-round(term),
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
-    source: (head: "neg", data: term),
+    source: (head: "neg", data: original),
     args: term.at("args", default: none),
   )
 }
 
 #let abs(term) = {
-  term.info.sign = "+"
+  let original = term
+  let value = as-float(term)
+  let info = term.info
+  info.sign = "+"
   return (
-    float: calc.abs(as-float(term)),
+    float: calc.abs(value),
     uncertainty: as-uncertainty(term),
-    info: term.info,
+    info: info,
     round: as-round(term),
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
-    source: (head: "abs", data: term),
+    source: (head: "abs", data: original),
     args: term.at("args", default: none),
   )
 }
@@ -84,15 +90,12 @@
   let unit = units.multiply-unit(terms.map(x => x.at("unit", default: none)))
   let product = terms.map(as-float).product(default: 0)
   let error = if terms.any(x => as-uncertainty(x) != none) {
-    (
-      calc.abs(product)
-        * rss(terms.map(x => {
-          let uncertainty = as-uncertainty(x)
-          if uncertainty != none {
-            uncertainty / as-float(x)
-          }
-        }))
-    )
+    rss(terms.enumerate().map(((i, x)) => {
+      let uncertainty = as-uncertainty(x)
+      if uncertainty != none {
+        uncertainty * calc.abs(terms.enumerate().filter(((j, _)) => j != i).map(((_, y)) => as-float(y)).product(default: 1))
+      }
+    }))
   }
   let target-e = get-e(terms, product, "value")
   return (
@@ -116,15 +119,12 @@
   let quotient = as-float(dividend) / as-float(divisor)
 
   let error = if terms.any(x => as-uncertainty(x) != none) {
-    (
-      calc.abs(quotient)
-        * rss(terms.map(x => {
-          let uncertainty = as-uncertainty(x)
-          if uncertainty != none {
-            uncertainty / as-float(x)
-          }
-        }))
-    )
+    let (a, b) = (as-float(dividend), as-float(divisor))
+    let (ua, ub) = (as-uncertainty(dividend), as-uncertainty(divisor))
+    rss((
+      if ua != none { ua / calc.abs(b) },
+      if ub != none { ub * calc.abs(a) / (b * b) },
+    ))
   }
   let target-e = get-e(terms, quotient, "value")
   return (
@@ -158,8 +158,14 @@
   let result = calc.pow(base-float, exponent-float)
 
   let error-terms = (
-    if base-uncertainty != none and base-float != 0 {
-      exponent-float * calc.abs(result) * (base-uncertainty / calc.abs(base-float))
+    if base-uncertainty != none {
+      if base-float != 0 {
+        exponent-float * calc.abs(result) * (base-uncertainty / calc.abs(base-float))
+      } else if exponent-float == 1 {
+        base-uncertainty
+      } else if exponent-float > 1 {
+        0.0
+      }
     },
     if exponent-uncertainty != none {
       calc.abs(result) * calc.abs(calc.ln(base-float)) * exponent-uncertainty
@@ -203,10 +209,10 @@
 
   let error-terms = (
     if radicand-uncertainty != none and radicand-float != 0 {
-      index-float * calc.abs(result) * (radicand-uncertainty / calc.abs(radicand-float))
+      calc.abs(result) * (radicand-uncertainty / calc.abs(radicand-float)) / calc.abs(index-float)
     },
     if index-uncertainty != none {
-      calc.abs(result) * calc.abs(calc.ln(radicand-float)) * index-uncertainty
+      calc.abs(result) * calc.abs(calc.ln(radicand-float)) * index-uncertainty / (index-float * index-float)
     },
   )
   let error = if error-terms.any(x => x != none) { rss(error-terms) }
@@ -271,227 +277,98 @@
 
 #let ln(value) = log(value, e)
 
-#let sin(angle) = {
-  let angle-float = as-float(angle)
-  let angle-uncertainty = as-uncertainty(angle)
-  assert(
-    units.is-unitless(angle)
-      or (
-        angle.unit.numerator.at(0).at(0) in (sym.degree, "rad", sym.prime.double, sym.prime)
-          and angle.unit.denominator.len() == 0
-      ),
-    message: "sin: angle must not carry a unit (radians assumed).",
-  )
-  if angle.at("unit", default: none) != none {
-    let unit = angle.unit.numerator.at(0).at(0)
-    if unit == sym.degree {
-      angle-float *= 1deg
-    } else if unit == sym.prime {
-      angle-float = (angle-float / 60) * 1deg
-    } else if unit == sym.prime.double {
-      angle-float = angle-float / 3600 * 1deg
-    } else if unit == "rad" {
-      angle-float = angle-float * 1rad
-    }
+#let angle-units = (
+  "°": 1deg,
+  "rad": 1rad,
+  "′": 1deg / 60,
+  "″": 1deg / 3600,
+)
+#let angle-parts(angle, name) = {
+  let unit = if units.is-unitless(angle) { "rad" } else { none }
+  if unit == none and angle.unit.denominator.len() == 0 and angle.unit.numerator.len() == 1 {
+    unit = str(angle.unit.numerator.at(0).at(0))
   }
-
-  let result = calc.sin(angle-float)
-  let error = if angle-uncertainty != none { calc.abs(calc.cos(angle-float)) * angle-uncertainty }
-  let target-e = 0
-
-  return (
-    float: result,
-    uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    constant: angle.at("constant", default: false),
-    source: (head: "sin", data: angle),
-    args: angle.at("args", default: none),
+  assert(
+    unit in angle-units,
+    message: name + ": angle must not carry a unit other than rad, " + sym.degree + ", " + sym.prime + " or " + sym.prime.double + " (radians assumed without unit).",
   )
+  let uncertainty = as-uncertainty(angle)
+  (
+    value: as-float(angle) * angle-units.at(unit),
+    uncertainty: if uncertainty != none { (uncertainty * angle-units.at(unit)).rad() },
+  )
+}
+
+#let trig-result(name, result, error, angle, target-e) = (
+  float: result,
+  uncertainty: error,
+  info: create-info(result, error, target-e),
+  round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+  constant: angle.at("constant", default: false),
+  source: (head: name, data: angle),
+  args: angle.at("args", default: none),
+)
+
+#let snap-zero(result, angle) = if calc.abs(result) < 1e-15 and calc.abs(angle.rad()) > 1e-3 { 0.0 } else { result }
+
+#let sin(angle) = {
+  let (value, uncertainty) = angle-parts(angle, "sin")
+  let result = snap-zero(calc.sin(value), value)
+  let error = if uncertainty != none { calc.abs(calc.cos(value)) * uncertainty }
+  trig-result("sin", result, error, angle, 0)
 }
 
 #let cos(angle) = {
-  let angle-float = as-float(angle)
-  let angle-uncertainty = as-uncertainty(angle)
-  assert(
-    units.is-unitless(angle)
-      or (
-        angle.unit.numerator.at(0).at(0) in (sym.degree, "rad", sym.prime.double, sym.prime)
-          and angle.unit.denominator.len() == 0
-      ),
-    message: "sin: angle must not carry a unit (radians assumed).",
-  )
-  if angle.at("unit", default: none) != none {
-    let unit = angle.unit.numerator.at(0).at(0)
-    if unit == sym.degree {
-      angle-float *= 1deg
-    } else if unit == sym.prime {
-      angle-float = (angle-float / 60) * 1deg
-    } else if unit == sym.prime.double {
-      angle-float = angle-float / 3600 * 1deg
-    } else if unit == "rad" {
-      angle-float = angle-float * 1rad
-    }
-  }
-
-  let result = calc.cos(angle-float)
-  let error = if angle-uncertainty != none { calc.abs(calc.sin(angle-float)) * angle-uncertainty }
-  let target-e = 0
-
-  return (
-    float: result,
-    uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    constant: angle.at("constant", default: false),
-    source: (head: "cos", data: angle),
-    args: angle.at("args", default: none),
-  )
+  let (value, uncertainty) = angle-parts(angle, "cos")
+  let result = snap-zero(calc.cos(value), value)
+  let error = if uncertainty != none { calc.abs(calc.sin(value)) * uncertainty }
+  trig-result("cos", result, error, angle, 0)
 }
 
 #let tan(angle) = {
-  let angle-float = as-float(angle)
-  let angle-uncertainty = as-uncertainty(angle)
-  assert(
-    units.is-unitless(angle)
-      or (
-        angle.unit.numerator.at(0).at(0) in (sym.degree, "rad", sym.prime.double, sym.prime)
-          and angle.unit.denominator.len() == 0
-      ),
-    message: "sin: angle must not carry a unit (radians assumed).",
-  )
-  if angle.at("unit", default: none) != none {
-    let unit = angle.unit.numerator.at(0).at(0)
-    if unit == sym.degree {
-      angle-float *= 1deg
-    } else if unit == sym.prime {
-      angle-float = (angle-float / 60) * 1deg
-    } else if unit == sym.prime.double {
-      angle-float = angle-float / 3600 * 1deg
-    } else if unit == "rad" {
-      angle-float = angle-float * 1rad
-    }
-  }
+  let (value, uncertainty) = angle-parts(angle, "tan")
+  let result = snap-zero(calc.tan(value), value)
+  let error = if uncertainty != none { uncertainty / calc.pow(calc.cos(value), 2) }
+  trig-result("tan", result, error, angle, get-e(none, result, "value"))
+}
 
-  let result = calc.tan(angle-float)
-  let error = if angle-uncertainty != none {
-    angle-uncertainty / calc.pow(calc.cos(angle-float), 2)
-  }
+#let inverse-trig-result(name, function, derivative, value, unit) = {
+  let value-float = as-float(value)
+  let value-uncertainty = as-uncertainty(value)
+  assert(units.is-unitless(value), message: name + ": value must not carry a unit.")
+  // unknown units fall back to degrees, like before
+  let divider = angle-units.at(str(unit), default: 1deg)
+  let result = function(value-float) / divider
+  // the uncertainty is propagated in radians and has to be expressed in the same unit as the result
+  let error = if value-uncertainty != none { derivative(value-float) * value-uncertainty * 1rad / divider }
   let target-e = get-e(none, result, "value")
-
-  return (
+  (
     float: result,
     uncertainty: error,
     info: create-info(result, error, target-e),
-    round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    constant: angle.at("constant", default: false),
-    source: (head: "tan", data: angle),
-    args: angle.at("args", default: none),
+    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    unit: (numerator: ((unit, "1"),), denominator: ()),
+    constant: value.at("constant", default: false),
+    source: (head: name, data: value),
+    args: value.at("args", default: none),
   )
 }
 
 #let asin(value, unit: sym.degree) = {
   let value-float = as-float(value)
-  let value-uncertainty = as-uncertainty(value)
   assert(units.is-unitless(value), message: "asin: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "asin: value must be in [-1, 1].")
-
-  let unit-divider = if unit == sym.degree {
-    1deg
-  } else if unit == "rad" {
-    1rad
-  } else if unit == sym.prime {
-    1deg / 60
-  } else if unit == sym.prime.double {
-    1deg / 360
-  } else {
-    1deg
-  }
-  let result = calc.asin(value-float) / unit-divider
-  let error = if value-uncertainty != none {
-    value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
-  }
-  let target-e = get-e(none, result, "value")
-
-  return (
-    float: result,
-    uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    unit: (numerator: ((unit, "1"),), denominator: ()),
-    constant: value.at("constant", default: false),
-    source: (head: "asin", data: value),
-    args: value.at("args", default: none),
-  )
+  inverse-trig-result("asin", calc.asin, x => 1 / calc.sqrt(1 - x * x), value, unit)
 }
 
 #let acos(value, unit: sym.degree) = {
   let value-float = as-float(value)
-  let value-uncertainty = as-uncertainty(value)
   assert(units.is-unitless(value), message: "acos: value must not carry a unit.")
   assert(value-float >= -1 and value-float <= 1, message: "acos: value must be in [-1, 1].")
-  let unit-divider = if unit == sym.degree {
-    1deg
-  } else if unit == "rad" {
-    1rad
-  } else if unit == sym.prime {
-    1deg / 60
-  } else if unit == sym.prime.double {
-    1deg / 360
-  } else {
-    1deg
-  }
-  let result = calc.acos(value-float) / unit-divider
-  let error = if value-uncertainty != none {
-    value-uncertainty / calc.sqrt(1 - calc.pow(value-float, 2))
-  }
-  let target-e = get-e(none, result, "value")
-
-  return (
-    float: result,
-    uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    unit: (numerator: ((unit, "1"),), denominator: ()),
-    constant: value.at("constant", default: false),
-    source: (head: "acos", data: value),
-    args: value.at("args", default: none),
-  )
+  inverse-trig-result("acos", calc.acos, x => 1 / calc.sqrt(1 - x * x), value, unit)
 }
 
-#let atan(value, unit: sym.degree) = {
-  let value-float = as-float(value)
-  let value-uncertainty = as-uncertainty(value)
-  assert(units.is-unitless(value), message: "atan: value must not carry a unit.")
-
-  let unit-divider = if unit == sym.degree {
-    1deg
-  } else if unit == "rad" {
-    1rad
-  } else if unit == sym.prime {
-    1deg / 60
-  } else if unit == sym.prime.double {
-    1deg / 360
-  } else {
-    1deg
-  }
-  let result = calc.atan(value-float) / unit-divider
-  let error = if value-uncertainty != none {
-    value-uncertainty / (1 + calc.pow(value-float, 2))
-  }
-  let target-e = get-e(none, result, "value")
-
-  return (
-    float: result,
-    uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-    unit: (numerator: ((unit, "1"),), denominator: ()),
-    constant: value.at("constant", default: false),
-    source: (head: "atan", data: value),
-    args: value.at("args", default: none),
-  )
-}
+#let atan(value, unit: sym.degree) = inverse-trig-result("atan", calc.atan, x => 1 / (1 + x * x), value, unit)
 
 #let apply-prefix(value, unit, in-numerator) = {
   let prefix = if type(unit.at(0)) != symbol and unit.at(0).len() != 1 { unit.at(0).first() }

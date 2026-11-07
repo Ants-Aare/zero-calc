@@ -88,4 +88,14 @@
   display.method(equation.define($(a + b) c$)(a: "1.0", b: "2.0", c: "3.0")),
   // 41: equation result with depth 1 stops at variables
   display.method(equation.define($(a + b) c$)(a: zcalc.add("1.0", "1.0"), b: "2.0", c: "3.0"), depth: 1),
+  // 42: mul(add, 3.0), depth 1
+  display.method(zcalc.mul(zcalc.add("1.0", "2.0"), "3.0"), depth: 1),
+  // 43: pow(add, 2), depth 1
+  display.method(zcalc.pow(zcalc.add("1.0", "2.0"), "2"), depth: 1),
+  // 44: neg(5.0)
+  display.method(zcalc.neg("5.0")),
+  // 45: neg(-5.0)
+  display.method(zcalc.neg("-5.0")),
+  // 46: abs(-5.0)
+  display.method(zcalc.abs("-5.0")),
 )

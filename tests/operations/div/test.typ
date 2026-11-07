@@ -81,4 +81,12 @@
   check(zcalc.div("-5.0+-0.2", "3.0"), float: -5/3, uncertainty: 0.2/3),
   // 38: quantities with uncertainty
   check(zcalc.div(zi.m("55.12445+-2.345"), zi.s("23.8+-0.1")), float: 2.3161533613445378, uncertainty: 0.09900884649405949),
+  // 39: m / m
+  zcalc.div(zi.m("6.0"), zi.m("3.0")),
+  // 40: (m/s) / (m/s)
+  zcalc.div(zi.declare("m/s")("6.0"), zi.declare("m/s")("3.0")),
+  // 41: km / m with convert-si
+  zcalc.div(zi.km("6.0"), zi.m("3.0"), convert-si: true),
+  // 42: div(0 +- 1, 5)
+  check(zcalc.div("0+-1", "5"), float: 0, uncertainty: 0.2),
 )

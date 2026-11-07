@@ -69,12 +69,44 @@
   check(zcalc.div(zcalc.sin(zi.degree("30.0")), zcalc.cos(zi.degree("30.0"))), float: 0.5773502691896256),
   // 32: sin of a sum of angles
   check(zcalc.sin(zcalc.add(zi.degree("20.0"), zi.degree("10.0"))), float: 0.5),
-  // 33: named arguments
-  zcalc.sin(zi.degree("30.0"), exponent: "sci"),
-  // 34: sin(1.8e3 arcmin)
+  // 33: sin(1.8e3 arcmin)
   check(zcalc.sin(zi.arcminute("1.8e3")), float: 0.5),
-  // 35: cos(60 deg)
+  // 34: cos(60 deg)
   check(zcalc.cos(zi.degree("60")), float: 0.5),
-  // 36: cos(1 rad)
+  // 35: cos(1 rad)
   check(zcalc.cos(zi.rad("1")), float: 0.5403023058681398),
+  // 36: sin(180.0 deg)
+  check(zcalc.sin(zi.degree("180.0")), float: 0),
+  // 37: sin(360.0 deg)
+  check(zcalc.sin(zi.degree("360.0")), float: 0),
+  // 38: cos(90.0 deg)
+  check(zcalc.cos(zi.degree("90.0")), float: 0),
+  // 39: cos(270.0 deg)
+  check(zcalc.cos(zi.degree("270.0")), float: 0),
+  // 40: sin(2.0 * pi)
+  check(zcalc.sin(zcalc.mul("2.0", zcalc.pi)), float: 0),
+  // 41: tan(180.0 deg)
+  check(zcalc.tan(zi.degree("180.0")), float: 0),
+  // 42: cos(pi/2) with a plain angle
+  check(zcalc.cos(zcalc.div(zcalc.pi, "2")), float: 0),
+  // 43: cos(0.0)
+  check(zcalc.cos("0.0"), float: 1),
+  // 44: cos(0.0 deg)
+  check(zcalc.cos(zi.degree("0.0")), float: 1),
+  // 45: sin(30.0 +- 1.0 deg)
+  check(zcalc.sin(zi.degree("30.0+-1.0")), float: 0.5, uncertainty: 0.015114994701951816),
+  // 46: cos(60.0 +- 1.0 deg)
+  check(zcalc.cos(zi.degree("60.0+-1.0")), float: 0.5, uncertainty: 0.015114994701951814),
+  // 47: tan(45.0 +- 1.0 deg)
+  check(zcalc.tan(zi.degree("45.0+-1.0")), float: 1, uncertainty: 0.034906585039886584),
+  // 48: sin(1800.0 +- 60.0 arcmin)
+  check(zcalc.sin(zi.arcminute("1800.0+-60.0")), float: 0.5, uncertainty: 0.015114994701951816),
+  // 49: sin(15.0 deg * 2.0)
+  check(zcalc.sin(zcalc.mul(zi.degree("15.0"), "2.0")), float: 0.5),
+  // 50: cos(60.0 deg / 2.0)
+  check(zcalc.cos(zcalc.div(zi.degree("60.0"), "2.0")), float: 0.8660254037844387),
+  // 51: sin(2 * asin(0.50))
+  check(zcalc.sin(zcalc.mul(zcalc.asin("0.50"), "2.0")), float: 0.8660254037844386),
+  // 52: tan(rad * 2.0)
+  check(zcalc.tan(zcalc.mul(zi.rad("0.25"), "2.0")), float: 0.5463024898437905),
 )

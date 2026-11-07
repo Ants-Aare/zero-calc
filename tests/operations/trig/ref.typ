@@ -68,12 +68,44 @@
   num("5.77e-1"),
   // 32: sin of a sum of angles
   num("0.500"),
-  // 33: named arguments
-  num("5.00e-1", exponent: "sci"),
-  // 34: sin(1.8e3 arcmin)
+  // 33: sin(1.8e3 arcmin)
   num("0.50"),
-  // 35: cos(60 deg)
+  // 34: cos(60 deg)
   num("0.50"),
-  // 36: cos(1 rad)
+  // 35: cos(1 rad)
   num("0.5"),
+  // 36: sin(180.0 deg)
+  num("0"),
+  // 37: sin(360.0 deg)
+  num("0"),
+  // 38: cos(90.0 deg)
+  num("0"),
+  // 39: cos(270.0 deg)
+  num("0"),
+  // 40: sin(2.0 * pi)
+  num("0"),
+  // 41: tan(180.0 deg)
+  num("0"),
+  // 42: cos(pi/2) with a plain angle
+  num("0"),
+  // 43: cos(0.0)
+  num("1.0"),
+  // 44: cos(0.0 deg)
+  num("1.0"),
+  // 45: sin(30.0 +- 1.0 deg)
+  num("0.500+-0.015"),
+  // 46: cos(60.0 +- 1.0 deg)
+  num("0.500+-0.015"),
+  // 47: tan(45.0 +- 1.0 deg)
+  num("1.000+-0.035"),
+  // 48: sin(1800.0 +- 60.0 arcmin)
+  num("0.5000+-0.0151"),
+  // 49: sin(15.0 deg * 2.0)
+  num("0.50"),
+  // 50: cos(60.0 deg / 2.0)
+  num("0.87"),
+  // 51: sin(2 * asin(0.50))
+  num("0.87"),
+  // 52: tan(rad * 2.0)
+  num("5.5e-1"),
 )

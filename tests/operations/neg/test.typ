@@ -41,6 +41,22 @@
   check(zcalc.abs(zcalc.neg("5.0")), float: 5),
   // 18: convert-si
   check(zcalc.neg(zi.mm("5.0"), convert-si: true), float: -0.005),
-  // 19: named argument
-  zcalc.neg("5.0", exponent: "sci"),
+  // 19: stored float of neg(m)
+  check(zcalc.neg(zi.m("5.0")), float: -5),
+  // 20: neg(m) + m
+  zcalc.add(zcalc.neg(zi.m("5.0")), zi.m("1.0")),
+  // 21: neg(num) + 1
+  zcalc.add(zcalc.neg(num("5.0")), "1.0"),
+  // 22: neg(m) * m
+  zcalc.mul(zcalc.neg(zi.m("5.0")), zi.m("2.0")),
+  // 23: neg(num with uncertainty) * 2
+  zcalc.mul(zcalc.neg(num("5.0+-0.1")), "2.0"),
+  // 24: m - neg(m)
+  zcalc.sub(zi.m("1.0"), zcalc.neg(zi.m("5.0"))),
+  // 25: neg(0)
+  zcalc.neg("0"),
+  // 26: neg(0.0)
+  zcalc.neg("0.0"),
+  // 27: neg(0.0 +- 0.1)
+  zcalc.neg("0.0+-0.1"),
 )

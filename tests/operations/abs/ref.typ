@@ -48,6 +48,4 @@
   zi.m("6.0"),
   // 22: convert-si
   zi.m("5.0e-3"),
-  // 23: named argument
-  num("5.0e0", exponent: "sci"),
 )

@@ -54,4 +54,10 @@
   $sqrt((#num("6") times sqrt((#num("0.1")/#num("2.0"))^2 + (#num("0.1")/#num("3.0"))^2))^2 + (#num("0.2"))^2)$,
   // 25: depth 0 shows only the error
   $#num("0.4")$,
+  // 26: sub
+  $sqrt((#num("0.1"))^2 + (#num("0.2"))^2)$,
+  // 27: sub, equal errors
+  $sqrt(2 times (#num("0.1"))^2)$,
+  // 28: root: radicand term uses y / (n x)
+  $sqrt((#num("3") times #num("0.3")/(#num("2") times #num("9.0")))^2)$,
 )

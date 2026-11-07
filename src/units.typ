@@ -52,7 +52,7 @@
   ).join(default: ())
 }
 
-#let dict-to-unit(pairs) = if pairs == (:) { none } else {
+#let dict-to-unit(pairs) = if pairs.values().all(x => x == 0) { none } else {
   (
     numerator: pairs.filter(x => x > 0).map(x => str(x)).pairs(),
     denominator: pairs.filter(x => x < 0).map(x => str(-x)).pairs(),
@@ -68,7 +68,7 @@
   normalise(a) == normalise(b)
 }
 
-#let signed-pairs-to-unit(pairs) = if pairs == (:) { none } else {
+#let signed-pairs-to-unit(pairs) = if pairs.all(x => x.at(1) == 0) { none } else {
   (
     numerator: pairs.filter(x => x.at(1) > 0).map(x => (x.at(0), str(x.at(1)))),
     denominator: pairs.filter(x => x.at(1) < 0).map(x => (x.at(0), str(-x.at(1)))),

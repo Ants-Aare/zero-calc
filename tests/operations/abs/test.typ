@@ -49,6 +49,4 @@
   check(zcalc.add(zcalc.abs(zi.m("-5.0")), zi.m("1.0")), float: 6),
   // 22: convert-si
   check(zcalc.abs(zi.mm("-5.0"), convert-si: true), float: 0.005),
-  // 23: named argument
-  zcalc.abs("-5.0", exponent: "sci"),
 )

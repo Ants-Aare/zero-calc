@@ -51,4 +51,16 @@
   repr(zcalc.add("1", "2", none, "3")),
   // 23: none is not zero
   repr(zcalc.mul("0", none)),
+  // 24: sin
+  repr(zcalc.sin(none)),
+  // 25: cos
+  repr(zcalc.cos(none)),
+  // 26: tan
+  repr(zcalc.tan(none)),
+  // 27: asin
+  repr(zcalc.asin(none)),
+  // 28: acos
+  repr(zcalc.acos(none)),
+  // 29: atan
+  repr(zcalc.atan(none)),
 )

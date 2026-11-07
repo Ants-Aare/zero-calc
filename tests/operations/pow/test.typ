@@ -77,4 +77,12 @@
   check(zcalc.pow(zi.cm("2.0"), "2", convert-si: true), float: 4e-4),
   // 36: integer-looking decimal exponent: 22.12^2.0
   check(zcalc.pow("22.12", "2.0"), float: 489.2944),
+  // 37: m^0
+  zcalc.pow(zi.m("3.0"), "0"),
+  // 38: 5.0 ^ 0.0
+  check(zcalc.pow("5.0", "0.0"), float: 1),
+  // 39: pow(0.0 +- 0.1, 1)
+  check(zcalc.pow("0.0+-0.1", "1"), float: 0, uncertainty: 0.1),
+  // 40: pow(0.0 +- 0.1, 2) is 0 +- 0
+  check(zcalc.pow("0.0+-0.1", "2"), float: 0, uncertainty: 0),
 )

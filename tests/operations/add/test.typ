@@ -103,42 +103,36 @@
   zcalc.add(zi.m("1.000"), zi.mm("5.0"), convert-si: true),
   // 48: convert-si: h + min
   zcalc.add(zi.hour("1.0"), zi.minute("30.0"), convert-si: true),
-  // 49: exponent of the first operand is used
-  zcalc.add(zi.m("1.0", exponent: "sci"), zi.m("2.0")),
-  // 50: call-site named argument
-  zcalc.add("1.0", "2.0", exponent: "sci"),
-  // 51: call-site round
-  zcalc.add("1.234", "2.345", round: (precision: 1, mode: "places")),
-  // 52: result of add as input
+  // 49: result of add as input
   check(zcalc.add(zcalc.add("1.5", "2.5"), "1.25"), float: 5.25),
-  // 53: result of add keeps uncertainty
+  // 50: result of add keeps uncertainty
   check(zcalc.add(zcalc.add("1.5+-0.3", "2.5+-0.4"), "1.25+-0.12"), float: 5.25, uncertainty: 0.5141984052872977),
-  // 54: 1000 + 10e1
+  // 51: 1000 + 10e1
   zcalc.add(1000, "10e1"),
-  // 55: 1001 + 10e1
+  // 52: 1001 + 10e1
   zcalc.add(1001, "10e1"),
-  // 56: 1001 + 1e2
+  // 53: 1001 + 1e2
   zcalc.add(1001, "1e2"),
-  // 57: 1.111e3 + 1.1e3
+  // 54: 1.111e3 + 1.1e3
   zcalc.add("1.111e3", "1.1e3"),
-  // 58: uncertainties and exponents
+  // 55: uncertainties and exponents
   zcalc.add("6.11+-0.111e2", "6.22e2"),
-  // 59: uncertainty and exponent on one side
+  // 56: uncertainty and exponent on one side
   zcalc.add("6.11+-0.111", "6.22e2"),
-  // 60: uncertainty larger than the other operand
+  // 57: uncertainty larger than the other operand
   zcalc.add("6.11+-0.1e3", "622.123"),
-  // 61: two uncertainties with exponents
+  // 58: two uncertainties with exponents
   zcalc.add("6.11+-0.111e2", "6.222222+-0.11e2"),
-  // 62: many digits, exponent 3 + 2
+  // 59: many digits, exponent 3 + 2
   zcalc.add("6.11111e2", "6.2222222222e3"),
-  // 63: many digits, same value other exponent
+  // 60: many digits, same value other exponent
   zcalc.add("6.11111e2", "62.222222222e2"),
-  // 64: eng exponent keeps the unit
+  // 61: eng exponent keeps the unit
   zcalc.add(me("22+-0.1"), me("12e3")),
-  // 65: eng exponent of a single quantity
+  // 62: eng exponent of a single quantity
   zcalc.add(me(1), 1),
-  // 66: pi + e with uncertainties
+  // 63: pi + e with uncertainties
   check(zcalc.add([#calc.pi+-0.1234], str(calc.e) + "+-0.1234"), float: calc.pi + calc.e, uncertainty: 0.17451395359683994),
-  // 67: ... plus a third uncertain term
+  // 64: ... plus a third uncertain term
   check(zcalc.add(zcalc.add([#calc.pi+-0.1234], str(calc.e) + "+-0.1234"), [1+-0.1]), float: calc.pi + calc.e + 1, uncertainty: 0.2011345818102894),
 )

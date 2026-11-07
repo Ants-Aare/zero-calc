@@ -67,4 +67,8 @@
   zcalc.div("1.0", zi.s("4.0")),
   // 19: units without a rule stay as they are
   zcalc.mul(zi.m("2.0"), zi.s("3.0")),
+  // 20: factor rule: mol/min to enzyme units
+  zcalc.convert-units-to-si(zi.declare("mol/min")("1.0")),
+  // 21: partial match keeps the remaining units
+  zcalc.mul(zi.declare("kg m^2 s^-3 A^-1")("2.0"), zi.m("3.0")),
 )
