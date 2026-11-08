@@ -1,9 +1,3 @@
-/// [skip]
-// BUG: units with fractional exponents (from sqrt/root/pow) can not be used in further calculations.
-//
-// sqrt(m) gives the unit `m^0.5`, but units-to-signed-pairs parses every exponent with int(), so any
-// further multiplication, division or power panics: `int("0.5")`.
-// The results should be m (sqrt(m)*sqrt(m)) and m^2 (cbrt(m^2)^3).
 #import "/src/zero-calc.typ": *
 #import "@preview/zero:0.7.1": *
 #import "/tests/helpers.typ": cases, check

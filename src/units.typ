@@ -47,8 +47,8 @@
 #let units-to-signed-pairs(units) = {
   units = units.filter(x => x != none)
   return (
-    units.filter(x => x.numerator != ()).map(x => x.numerator.map(y => (y.at(0), int(y.at(1)))))
-      + units.filter(x => x.denominator != ()).map(x => x.denominator.map(y => (y.at(0), int("-" + y.at(1)))))
+    units.filter(x => x.numerator != ()).map(x => x.numerator.map(y => (y.at(0), float(y.at(1)))))
+      + units.filter(x => x.denominator != ()).map(x => x.denominator.map(y => (y.at(0), float("-" + y.at(1)))))
   ).join(default: ())
 }
 
@@ -60,7 +60,7 @@
 }
 
 #let unit-to-dict(unit) = if unit == none { (:) } else {
-  unit.numerator.to-dict().map(x => int(x)) + unit.denominator.to-dict().map(x => -int(x))
+  unit.numerator.to-dict().map(x => float(x)) + unit.denominator.to-dict().map(x => -float(x))
 }
 
 #let equal(a, b) = {
