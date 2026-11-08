@@ -12,9 +12,9 @@
 #let inf = normalise-constant(calc.inf)
 
 #let add(terms) = {
-  let unit = terms.first().at("unit", default: none)
+  let unit = terms.filter(x => x.at("unit", default: none) != none).first(default: (unit: none)).unit
   assert(
-    terms.all(x => units.equal(x.at("unit", default: none), unit)),
+    terms.all(x => x.at("unit", default: none) == none or units.equal(x.at("unit", default: none), unit)),
     message: "All parameters must have the same unit.",
   )
   let sum = terms.map(as-float).sum()
@@ -36,12 +36,7 @@
 }
 
 #let sub(a, terms) = {
-  let unit = a.at("unit", default: none)
   if type(terms) != array { terms = (terms,) }
-  assert(
-    terms.all(x => units.equal(x.at("unit", default: none), unit)),
-    message: "All parameters must have the same unit.",
-  )
   let negative-terms = terms.map(x => {
     if x.at("float", default: none) != none { x.float = -x.float }
     x.info.sign = if x.info.sign == "-" { "+" } else { "-" }

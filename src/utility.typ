@@ -359,23 +359,18 @@
   }
 }
 
-#let normalise-quantities(quantities, apply-unit: false) = {
+#let normalise-quantities(quantities) = {
   let datas = ()
-  let unit
   for candidate in quantities {
     let metadata = impl.utility.retrieve-metadata(candidate)
     if metadata != none {
       datas.push(metadata)
-      unit = metadata.at("unit", default: none)
     } else {
       let t = type(candidate)
       if t == dictionary {
         datas.push(candidate)
       } else if (t == int or t == float or t == str or t == content) {
         let data = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
-        if apply-unit and unit != none {
-          data += (unit: unit)
-        }
         datas.push(data)
       }
     }
