@@ -319,6 +319,26 @@
   args: args,
 )
 
+#let merge-args(terms, unit: none) = {
+  let named = (:)
+  for term in terms.rev() {
+    let args = term.at("args", default: none)
+    if args == none { continue }
+    let operand-named = args.named()
+    if not units.equal(term.at("unit", default: none), unit) {
+      let _ = operand-named.remove("alt", default: none)
+    }
+    named += operand-named
+  }
+  arguments(..named)
+}
+#let with-call-args(result, call) = {
+  let inherited = result.at("args", default: none)
+  let named = if inherited == none { (:) } else { inherited.named() }
+  result.args = arguments(..(named + call.named()))
+  result
+}
+
 #let create-result-metadata(value) = [#metadata(value)<calc-result>]
 
 #let default-state = (

@@ -167,7 +167,6 @@
     post: it => apply-operations(it, variables),
   )
   result.boundary = true
-  result.args = values
   display.display-info(result)
 }
 

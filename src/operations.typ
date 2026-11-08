@@ -1,7 +1,7 @@
 #import "@preview/zero:0.7.1"
 #import "units.typ"
 #import "utility.typ": (
-  as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, normalise-constant,
+  as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, merge-args, normalise-constant,
   normalise-quantity, prefixes, rss,
 )
 
@@ -31,7 +31,7 @@
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "add", data: terms),
-    args: terms.map(x => x.at("args", default: none)).sum(),
+    args: merge-args(terms, unit: unit),
   )
 }
 
@@ -101,7 +101,7 @@
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "mul", data: terms),
-    args: terms.map(x => x.at("args", default: none)).sum(),
+    args: merge-args(terms, unit: unit),
   )
 }
 
@@ -130,7 +130,7 @@
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "div", data: terms),
-    args: terms.map(x => x.at("args", default: none)).sum(),
+    args: merge-args(terms, unit: unit),
   )
 }
 
@@ -182,7 +182,7 @@
     unit: unit,
     constant: (base, exponent).all(x => x.at("constant", default: false)),
     source: (head: "pow", data: (base, exponent)),
-    args: (base, exponent).map(x => x.at("args", default: none)).sum(),
+    args: merge-args((base, exponent), unit: unit),
   )
 }
 
@@ -226,7 +226,7 @@
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
     source: (head: "root", data: (radicand, index)),
-    args: (radicand, index).map(x => x.at("args", default: none)).sum(),
+    args: merge-args((radicand, index), unit: unit),
   )
 }
 
@@ -266,7 +266,7 @@
     ),
     constant: (value, base).all(x => x.at("constant", default: false)),
     source: (head: "log", data: (value, base)),
-    args: (value, base).map(x => x.at("args", default: none)).sum(),
+    args: merge-args((value, base), unit: none),
   )
 }
 
@@ -301,7 +301,7 @@
   round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
   constant: angle.at("constant", default: false),
   source: (head: name, data: angle),
-  args: angle.at("args", default: none),
+  args: merge-args((angle,), unit: none),
 )
 
 #let snap-zero(result, angle) = if calc.abs(result) < 1e-15 and calc.abs(angle.rad()) > 1e-3 { 0.0 } else { result }
@@ -541,7 +541,7 @@
   named = if named == none { (:) } else { named.named() }
   let _ = named.remove("alt", default: none)
   result.unit = unit
-  result.args = arguments(..named, ..args.named())
+  result.args = arguments(..(named + args.named()))
   result.source = (head: "mul", data: (quantity,))
   return result
 }
