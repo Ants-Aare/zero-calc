@@ -10,20 +10,32 @@
 #let s = zi.second
 #let g-m2-s-2 = zi.declare("g m^2 s^-2")
 
-
 #zcalc.div(m[30+-0.3], s[5+-0.4])
 #pagebreak()
-
 #let value = zcalc.div(m[30+-1.45], s[5.0+-0.20]) // 30 / 5 = 6
 #let value = zcalc.pow(value, 2)                  // 6^2 = 36
 #display.method(value, block: true)
 #display.error-method(value, block: true)
 
 #pagebreak()
-
 #let kinetic-energy-math = $
   E_"kin" = 1/2 m v^2
 $
 #kinetic-energy-math
 #let kinetic-energy-function = equation.define(kinetic-energy-math)
 #display.method(kinetic-energy-function(m: g[10], v: zcalc.div(m[30], s[5.0])))
+
+#pagebreak()
+// Display options
+#let value = zcalc.div(m[30+-1.45], s[5.0+-0.20])
+#let value = zcalc.sqrt(value, 2)
+#display.method(value, depth: 1, block: true)
+#display.method(value, show-error: true, fraction: "inline", block: true)
+$ #display.method(value, show-result: false) + 1 $
+
+#pagebreak()
+// Units
+#display.method(zcalc.convert-units(zi.km-h("3.6"), zi.declare("m/s")), block: true)
+#display.method(zcalc.convert-units(zi.km("1.5"), zi.m), block: true)
+#zcalc.to-float(zi.km("1.5"), unit: zi.m)
+

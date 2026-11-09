@@ -1,5 +1,5 @@
 # Zero-Calc
-Basic math operations and equation formatting for [Typst](https://typst.app).
+Calculations inside your [Typst](https://typst.app) document, with automatic error propagation, unit handling and significant figures, built on top of [Zero](https://typst.app/universe/package/zero).
 
 
 Perform all your calculations inside the document with automatic error propagation, unit modification, and significant-figures handled by **Zero-Calc**.
@@ -19,14 +19,14 @@ The zcalc namespace can replace regular calc function calls in most cases. Use z
 </p>
 
 ## Calculation History and Error Propagation
-You can use the results of operations to do further calculations. Every `zcalc` result carries its full dependency graph. `display.method-result` reconstructs that as a math equation showing how the value was calculated and `display.error-method-result` does the same for the uncertainty.
+You can use the results of operations to do further calculations. Every `zcalc` result carries its full dependency graph. `display.method` reconstructs that as a math equation showing how the value was calculated and `display.error-method` does the same for the uncertainty.
 
 ```typst
 #let value = zcalc.div(m[30+-1.45], s[5.0+-0.20]) // 30 / 5 = 6
 #let value = zcalc.pow(value, 2)                  // 6^2 = 36
 
-#display.method-result(value)
-#display.error-method-result(value)
+#display.method(value)
+#display.error-method(value)
 ```
 <p align="center">
 <img alt="At the top an equation with the operations on the left and the result with properly combined units on the right. At the bottom a complex series of operations calculating the error propagation using the values and units." src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/2.png" />
@@ -42,12 +42,15 @@ Beyond basic arithmetic **Zero-Calc** also understands typst math equations by u
 #let value = kinetic-energy-function(m: g[10], v: zcalc.div(m[30], s[5.0]))
 
 #kinetic-energy-math
-#display.method-result(value)
+#display.method(value)
 ```
 <p align="center">
 <img alt="At the top a regular typst math equation. At the bottom the same equation with values and units filled in and the result displayed." src="https://raw.githubusercontent.com/Ants-Aare/zero-calc/0.7.0/tests/readme/ref/3.png" />
 </p>
 
+
+## Named arguments
+Named arguments of a zero number or quantity (`exponent`, `product`, ...) are passed on to every result: the first operand has the highest priority, arguments of later operands fill the gaps and arguments given to the call itself win over everything. `round` is the exception: it states the accuracy of that operand and is used in the calculation, the result gets its own precision (give `round` to the call to override it). The `alt` text of a unit is only kept as long as the unit does not change. zero's global settings (`set-num`, `set-round`, `set-group`, `set-unit`) apply to results as usual; the precision that follows from the significant figures of a calculation wins over a global `set-round`.
 ## Constants
 Constants usually don't affect the amount of significant figures. The example above would strictly speaking only have one significant figure because our 2 sig-figs inputs are overpowered by the less precise factor of 1/2 with strictly speaking just 1 sig-fig. In equations defined in math mode all numbers are considered constants by default and do not affect the amount of significant figures. You can use the mathematical constants with `zcalc.pi` etc. or manually define constants like this
 
@@ -97,6 +100,8 @@ Use the `zero-calc.impl` namespace to access internal methods. The `utility.norm
 - zcalc.tau
 - zcalc.inf
 - zcalc.convert-units-to-si(value)
+- zcalc.to-float(value, unit: none)
+- zcalc.to-uncertainty(value, unit: none)
 - zcalc.convert-units(value, unit), e.g. `zcalc.convert-units(zi.declare("m^3")(5e-5), zi.liter)`
 
 All of these calculations may also be used in mathematical equations. Any other unknown symbols will be understood as variables.
