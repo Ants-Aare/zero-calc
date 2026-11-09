@@ -1,6 +1,6 @@
 [package]
 name = "zero-calc"
-version = "0.7.0"
+version = "0.7.1"
 entrypoint = "src/zero-calc.typ"
 authors = ["Ants Aare Alamaa <https://github.com/Ants-Aare>"]
 license = "MIT"
