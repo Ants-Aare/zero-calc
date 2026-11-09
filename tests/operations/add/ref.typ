@@ -107,25 +107,25 @@
   // 50: result of add keeps uncertainty
   num("5.3+-0.5"),
   // 51: 1000 + 10e1
-  num("110.0e1"),
+  num("1.100e3"),
   // 52: 1001 + 10e1
-  num("110.1e1"),
+  num("1.101e3"),
   // 53: 1001 + 1e2
-  num("11.01e2"),
+  num("1.101e3"),
   // 54: 1.111e3 + 1.1e3
   num("2.2e3"),
   // 55: uncertainties and exponents
-  num("12.33+-0.111e2"),
+  num("1.2330+-0.0111e3"),
   // 56: uncertainty and exponent on one side
   num("6.2811+-0.00111e2"),
   // 57: uncertainty larger than the other operand
   num("6.7+-0.1e3"),
   // 58: two uncertainties with exponents
-  num("12.33+-0.16e2"),
+  num("1.233+-0.016e3"),
   // 59: many digits, exponent 3 + 2
   num("6.833333e3"),
   // 60: many digits, same value other exponent
-  num("68.33333e2"),
+  num("6.833333e3"),
   // 61: eng exponent keeps the unit
   me("12.022+-0.0001e3"),
   // 62: eng exponent of a single quantity

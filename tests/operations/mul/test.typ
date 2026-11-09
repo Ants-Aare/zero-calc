@@ -24,7 +24,7 @@
   // 9: negative * positive
   zcalc.mul("-2.0", "3.0"),
   // 10: three factors
-  check(zcalc.mul("1.1", "2.22", "3.333"), float: 1.1*2.22*3.333),
+  check(zcalc.mul("1.1", "2.22", "3.333"), float: 1.1 * 2.22 * 3.333),
   // 11: exponents cancel
   zcalc.mul("1e3", "1e-3"),
   // 12: exponents add
@@ -44,7 +44,7 @@
   // 19: constant does not limit precision
   zcalc.mul("2.0", zcalc.const("3")),
   // 20: pi is a constant
-  check(zcalc.mul("2.0", zcalc.pi), float: 2*calc.pi),
+  check(zcalc.mul("2.0", zcalc.pi), float: 2 * calc.pi),
   // 21: integer constant times pi
   zcalc.mul(zcalc.const("2"), zcalc.pi),
   // 22: relative uncertainties add in quadrature

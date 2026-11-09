@@ -97,4 +97,8 @@
   zi.degree("60"),
   // 46: arctan(x)
   zi.degree("45"),
+  // 47: variables named like zero options are not passed on to zero
+  num("2.0"),
+  // 48: arguments of the variables are inherited
+  num("2.0", exponent: "sci"),
 )

@@ -9,7 +9,7 @@
   // 2: show-error: false drops the uncertainty
   num("4.0"),
   // 3: show-error: false with a larger uncertainty
-  num("6"),
+  num("6.0"),
   // 4: plain number
   num("1.50"),
   // 5: quantity

@@ -19,17 +19,17 @@
   // 7: abs passes the error of the operand through
   $#num("0.1")$,
   // 8: mul: relative errors
-  $#num("6") times sqrt((#num("0.1")/#num("2.0"))^2 + (#num("0.1")/#num("3.0"))^2)$,
+  $#num("6.0") times sqrt((#num("0.1")/#num("2.0"))^2 + (#num("0.1")/#num("3.0"))^2)$,
   // 9: mul: one uncertain factor
-  $#num("6") times sqrt((#num("0.1")/#num("2.0"))^2)$,
+  $#num("6.0") times sqrt((#num("0.1")/#num("2.0"))^2)$,
   // 10: mul: identical relative errors are counted
-  $#num("4") times sqrt(2 times (#num("0.1")/#num("2.0"))^2)$,
+  $#num("4.0") times sqrt(2 times (#num("0.1")/#num("2.0"))^2)$,
   // 11: div: relative errors
-  $#num("2") times sqrt((#num("0.1")/#num("6.0"))^2 + (#num("0.1")/#num("3.0"))^2)$,
+  $#num("2.00") times sqrt((#num("0.1")/#num("6.0"))^2 + (#num("0.1")/#num("3.0"))^2)$,
   // 12: pow: base
-  $sqrt((#num("2") times #num("9") times #num("0.1")/#num("3.0"))^2)$,
+  $sqrt((#num("2") times #num("9.0") times #num("0.1")/#num("3.0"))^2)$,
   // 13: pow: exponent
-  $sqrt((#num("8") dot ln(#num("2.0")) dot #num("0.1"))^2)$,
+  $sqrt((#num("8.0") dot ln(#num("2.0")) dot #num("0.1"))^2)$,
   // 14: pow: nothing uncertain
   $0$,
   // 15: log: value
@@ -49,9 +49,9 @@
   // 22: sin without uncertainty
   $0$,
   // 23: constants have no error
-  $#num("6") times sqrt((#num("0.1")/#num("2.0"))^2)$,
+  $#num("6.3") times sqrt((#num("0.1")/#num("2.0"))^2)$,
   // 24: nested: error of an error
-  $sqrt((#num("6") times sqrt((#num("0.1")/#num("2.0"))^2 + (#num("0.1")/#num("3.0"))^2))^2 + (#num("0.2"))^2)$,
+  $sqrt((#num("6.0") times sqrt((#num("0.1")/#num("2.0"))^2 + (#num("0.1")/#num("3.0"))^2))^2 + (#num("0.2"))^2)$,
   // 25: depth 0 shows only the error
   $#num("0.4")$,
   // 26: sub
@@ -59,5 +59,5 @@
   // 27: sub, equal errors
   $sqrt(2 times (#num("0.1"))^2)$,
   // 28: root: radicand term uses y / (n x)
-  $sqrt((#num("3") times #num("0.3")/(#num("2") times #num("9.0")))^2)$,
+  $sqrt((#num("3.00") times #num("0.3")/(#num("2") times #num("9.0")))^2)$,
 )

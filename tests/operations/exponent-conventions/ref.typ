@@ -11,7 +11,7 @@
   // 2: add: 1e1 + 1e2
   num("1.1e2"),
   // 3: add: 1000 + 1e2
-  num("11.00e2"),
+  num("1.100e3"),
   // 4: add: 1 + 1e-1
   num("1.1"),
   // 5: add: 1 + 1e-2
@@ -19,11 +19,11 @@
   // 6: add: 1e-3 + 1e-2
   num("1.1e-2"),
   // 7: add: 6e2 + 6e2
-  num("12e2"),
+  num("1.2e3"),
   // 8: add: 2.5e-1 + 7.5e-1 stays in e-1
-  num("10.00e-1"),
+  num("1.000"),
   // 9: sub: 1.0 km - 5.0 m
-  zi.m("0.995e3"),
+  zi.m("9.95e2"),
   // 10: mul: rounding up to the next power of ten in exponent notation
   num("1.00e-2"),
   // 11: mul: rounding up to the next power of ten (3.0e2)

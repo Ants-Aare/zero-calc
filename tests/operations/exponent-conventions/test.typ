@@ -1,6 +1,6 @@
 // Characterisation of how the exponent of a result is chosen.
-// add/sub keep the highest exponent of their operands (so mantissas outside [1, 10) can appear),
-// mul/div/pow/root/log use the order of magnitude of the result (10..99 stay plain, below 1 uses an exponent).
+// All operations use the order of magnitude of the rounded result as exponent (10..99 stay plain, below 1 and from 100 on
+// an exponent is used). The exception are sums of plain numbers: when no operand has an exponent, the sum has none either.
 #import "/src/zero-calc.typ": *
 #import "@preview/zero:0.7.1": *
 #import "/tests/helpers.typ": cases, check
@@ -21,7 +21,7 @@
   zcalc.add("1e-3", "1e-2"),
   // 7: add: 6e2 + 6e2
   zcalc.add("6e2", "6e2"),
-  // 8: add: 2.5e-1 + 7.5e-1 stays in e-1
+  // 8: add: 2.5e-1 + 7.5e-1 carries into 1.000
   zcalc.add("2.50e-1", "7.50e-1"),
   // 9: sub: 1.0 km - 5.0 m
   zcalc.sub(zi.km("1.0"), zi.m("5.0"), convert-si: true),

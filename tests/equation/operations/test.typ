@@ -98,4 +98,8 @@
   check(equation.define($arccos(x)$)(x: "0.5"), float: 60),
   // 46: arctan(x)
   check(equation.define($arctan(x)$)(x: "1.0"), float: 45),
+  // 47: variables named like zero options are not passed on to zero
+  equation.define($a b$)(a: "1.0", b: "2.0", digits: 4, exponent: "sci", round: (precision: 1)),
+  // 48: arguments of the variables are inherited
+  equation.define($a b$)(a: num("1.0", exponent: "sci"), b: "2.0"),
 )

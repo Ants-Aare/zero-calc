@@ -11,9 +11,9 @@
   // 3: show-error: true
   math.equation($ #num("1.5+-0.1") + #num("2.5+-0.1") = #num("4.0+-0.1") $),
   // 4: quantities
-  math.equation($ #zi.m("30")/#zi.s("5") = #zi.declare("m/s")("6") $),
+  math.equation($ #zi.m("30.0")/#zi.s("5.0") = #zi.declare("m/s")("6.0") $),
   // 5: README example
-  math.equation($ (#zi.m("30")/#zi.s("5.0"))^2 = #zi.declare("m^2/s^2")("36") $),
+  math.equation($ (#zi.m("30.00")/#zi.s("5.00"))^2 = #zi.declare("m^2/s^2")("36.0") $),
   // 6: conversion
   math.equation($ #zi.km("1.5") times #zi.declare("m/km")("1e3", omit-unity-mantissa: true) = #zi.m("1.5e3") $),
   // 7: conversion with a compound unit

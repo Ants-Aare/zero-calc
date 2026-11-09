@@ -76,12 +76,12 @@
   num("9.59e-1"),
   // 36: abs of constant
   num(calc.pi),
-  // 37: 1 + inf
-  num(calc.inf),
-  // 38: inf + inf
-  num(calc.inf),
-  // 39: 2 * inf
-  num(calc.inf),
+  // 37: negative infinity
+  num(-calc.inf),
+  // 38: overflow to negative infinity
+  num(-calc.inf),
+  // 39: abs of a finite constant is no special case
+  num("2"),
   // 40: 1e300 * 1e300 overflows
   num(calc.inf),
   // 41: 10 ^ 400 overflows

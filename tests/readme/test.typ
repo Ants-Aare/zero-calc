@@ -16,8 +16,8 @@
 
 #let value = zcalc.div(m[30+-1.45], s[5.0+-0.20]) // 30 / 5 = 6
 #let value = zcalc.pow(value, 2)                  // 6^2 = 36
-#display.method-result(value, block: true)
-#display.error-method-result(value, block: true)
+#display.method(value, block: true)
+#display.error-method(value, block: true)
 
 #pagebreak()
 
@@ -26,4 +26,4 @@
 $
 #kinetic-energy-math
 #let kinetic-energy-function = equation.define(kinetic-energy-math)
-#display.method-result(kinetic-energy-function(m: g[10], v: zcalc.div(m[30], s[5.0])))
+#display.method(kinetic-energy-function(m: g[10], v: zcalc.div(m[30], s[5.0])))

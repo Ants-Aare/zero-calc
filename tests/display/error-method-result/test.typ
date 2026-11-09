@@ -1,4 +1,4 @@
-// display.error-method-result: `error calculation = error` as one equation.
+// display.error-method (show-result: true, the default): `error calculation = error` as one equation.
 #import "/src/zero-calc.typ": *
 #import "@preview/zero:0.7.1": *
 #import "/tests/helpers.typ": cases, check
@@ -6,11 +6,11 @@
 
 #cases(
   // 1: add
-  display.error-method-result(zcalc.add("1.5+-0.1", "2.5+-0.2")),
+  display.error-method(zcalc.add("1.5+-0.1", "2.5+-0.2")),
   // 2: mul
-  display.error-method-result(zcalc.mul("2.0+-0.1", "3.0+-0.1")),
+  display.error-method(zcalc.mul("2.0+-0.1", "3.0+-0.1")),
   // 3: quantity
-  display.error-method-result(zcalc.div(zi.m("30+-0.3"), zi.s("5+-0.4"))),
+  display.error-method(zcalc.div(zi.m("30+-0.3"), zi.s("5+-0.4"))),
   // 4: error-method-result of sub
-  display.error-method-result(zcalc.sub("5.0+-0.1", "2.0+-0.2")),
+  display.error-method(zcalc.sub("5.0+-0.1", "2.0+-0.2")),
 )
