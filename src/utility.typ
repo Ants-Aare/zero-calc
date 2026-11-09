@@ -209,6 +209,7 @@
   let round = (
     precision: value-places,
     mode: "places",
+    pad: true,
   )
   if uncertainty-places < 900 {
     round += (uncertainty-precision: (places: uncertainty-places))
@@ -249,6 +250,7 @@
   let round = (
     precision: value-sig-figs,
     mode: "figures",
+    pad: true,
   )
   if uncertainty-sig-figs != int.max {
     round += (uncertainty-precision: uncertainty-sig-figs)

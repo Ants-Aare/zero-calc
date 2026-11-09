@@ -85,12 +85,19 @@
   let unit = units.multiply-unit(terms.map(x => x.at("unit", default: none)))
   let product = terms.map(as-float).product(default: 0)
   let error = if terms.any(x => as-uncertainty(x) != none) {
-    rss(terms.enumerate().map(((i, x)) => {
-      let uncertainty = as-uncertainty(x)
-      if uncertainty != none {
-        uncertainty * calc.abs(terms.enumerate().filter(((j, _)) => j != i).map(((_, y)) => as-float(y)).product(default: 1))
-      }
-    }))
+    rss(terms
+      .enumerate()
+      .map(((i, x)) => {
+        let uncertainty = as-uncertainty(x)
+        if uncertainty != none {
+          (
+            uncertainty
+              * calc.abs(
+                terms.enumerate().filter(((j, _)) => j != i).map(((_, y)) => as-float(y)).product(default: 1),
+              )
+          )
+        }
+      }))
   }
   let target-e = get-e(terms, product, "value")
   return (
@@ -285,7 +292,14 @@
   }
   assert(
     unit in angle-units,
-    message: name + ": angle must not carry a unit other than rad, " + sym.degree + ", " + sym.prime + " or " + sym.prime.double + " (radians assumed without unit).",
+    message: name
+      + ": angle must not carry a unit other than rad, "
+      + sym.degree
+      + ", "
+      + sym.prime
+      + " or "
+      + sym.prime.double
+      + " (radians assumed without unit).",
   )
   let uncertainty = as-uncertainty(angle)
   (

@@ -1,401 +1,71 @@
 #import "utility.typ"
-#import "operations.typ"
-#import "units.typ"
-#import "@preview/zero:0.7.1"
+#import "utility-display.typ" as ud
 
-#let _method-prec-table = (add: 1, sub: 1, neg: 2, mul: 2.5, div: 2.5)
-#let _method-prec(value) = {
-  let op = value.at("source", default: none)
-  if op == none { return 1000 }
-  _method-prec-table.at(op.head, default: 1000)
+/// A single value, as zcalc shows it. `show-error: false` shows the number without its uncertainty,
+/// rounded exactly like the full number.
+#let variable(value, show-error: true) = ud.variable(value, show-error: show-error)
+
+/// The uncertainty of a value on its own, rounded exactly like it is in the full number.
+#let error(value) = ud.error(value)
+
+/// How `value` was calculated, as a math expression with the operands filled in
+/// (`show-result: true`: followed by `= result`, as an equation).
+/// - show-result: add `= result` and return an equation, which takes the remaining arguments of `math.equation`
+/// - equals: the symbol in front of the result
+/// - show-error: show the uncertainty of the operands
+/// - depth: how many operations are expanded (none: all)
+/// - frozen: expand everything below the first operation, whatever the depth
+/// - product: symbol between factors (auto: zero's `product`, none: juxtaposition)
+/// - fraction: "fraction" (stacked) or "inline" (a / b)
+/// - show-units: show the units of the operands
+/// - exponential: e^x as a "power" or as the "function" exp(x)
+#let method(
+  value,
+  show-result: true,
+  equals: sym.eq,
+  show-error: false,
+  depth: none,
+  frozen: false,
+  product: auto,
+  fraction: "fraction",
+  show-units: true,
+  exponential: "power",
+  ..args,
+) = {
+  value = utility.normalise-quantity(value, allow-special: true)
+  let calculation = ud.method-tree(value, ud.method-options(show-error, depth, frozen, product, fraction, show-units, exponential))
+  if not show-result {
+    assert(args.named().len() == 0, message: "display.method: " + repr(args.named().keys()) + " only apply with show-result: true")
+    return calculation
+  }
+  math.equation($ #calculation #equals #ud.variable(value, show-error: show-error) $, ..args)
 }
 
-#let display-info(value) = {
-  value = utility.normalise-exponent(value)
-  // infinity is shown as a symbol, there is nothing to round
-  if not utility.is-finite(utility.as-float(value)) {
-    value.round = none
-    let named = value.at("args", default: arguments()).named()
-    let _ = named.remove("round", default: none)
-    value.args = arguments(..named)
-  }
-  let apply-preferred-units(value, preferred-units) = {
-    if preferred-units == () {
-      return value
-    }
-
-    // the old alt text describes the old unit, use the one of the preferred unit (auto: let zero generate it)
-    let use-unit(value, unit, rule) = {
-      value.unit = unit
-      let named = value.at("args", default: arguments()).named()
-      named.insert("alt", rule.preferred.at("alt", default: auto))
-      value.args = arguments(..value.at("args", default: arguments()).pos(), ..named)
-      value
-    }
-
-    for rule in preferred-units {
-      if rule.match.unit == value.unit {
-        value = use-unit(value, rule.preferred.unit, rule)
-        if rule.factor != none {
-          value = operations.mul((value, operations.const(rule.factor)))
-        }
-      } else if not rule.exact-match {
-        let units-dict = units.unit-to-dict(value.unit)
-        let rule-units-dict = units.unit-to-dict(rule.match.unit)
-        if units.contains-unit(units-dict, rule-units-dict) {
-          if rule.factor != none {
-            value = operations.mul((value, operations.const(rule.factor)))
-          }
-          value = use-unit(value, units.multiply-unit((value.unit, units.invert-unit(rule.match.unit), rule.preferred.unit)), rule)
-        } else if units.contains-unit(units-dict, rule-units-dict.map(x => -x)) {
-          value.unit = units.multiply-unit((value.unit, rule.match.unit, units.invert-unit(rule.preferred.unit)))
-          if rule.factor != none {
-            value = operations.div(value, operations.const(rule.factor))
-          }
-        }
-      }
-    }
-    return value
-  }
-  let result = context {
-    let displayed-value = if value.at("unit", default: none) == none {
-      if value.info.int == "" and value.info.frac == "" {
-        zero.num(round: utility.as-round(value), ..value.at("args", default: ()))
-      } else {
-        zero.num(value.info, round: utility.as-round(value), ..value.at("args", default: ()))
-      }
-    } else {
-      let zcalc-state = utility.zcalc-state.get()
-
-      let value = apply-preferred-units(value, zcalc-state.preferred-units)
-      if value.info.int == "" and value.info.frac == "" {
-        zero.zi.units.unit(value.unit, ..value.at("args", default: ()))
-      } else {
-        zero.zi.units.qty(value.info, value.unit, round: utility.as-round(value), ..value.at("args", default: ()))
-      }
-    }
-
-    displayed-value.children.slice(1).join()
-  }
-
-  utility.create-result-metadata(value)
-  result
-}
-
-#let variable(value, show-error: true) = {
-  value = utility.normalise-quantity(value)
-
-  if show-error == false {
-    let args = value.at("args", default: none)
-    let round = value.at("round", default: none)
-    if round == none and args != none {
-      value.round = args.named().at("round", default: none)
-      round = value.round
-    }
-    if round != none {
-      value.round.precision = calc.min(
-        {
-          let u = value.round.at("uncertainty-precision", default: 15)
-          if type(u) == dictionary { u = u.places }
-          u
-        },
-        value.round.at("precision", default: 15),
-        value.at("pm", default: (none, range(15))).at(1).len(),
-      )
-      let x = value.round.remove("uncertainty-precision", default: none)
-    }
-    if args != none {
-      let named = args.named()
-      let x = named.remove("round", default: none)
-      value.args = arguments(..args.pos(), ..named)
-    }
-    value.info.pm = none
-  }
-  let x = value.remove("source", default: none)
-  display-info(value)
-}
-
-#let _expands(value, depth, frozen) = {
-  let free = frozen and not value.at("boundary", default: false)
-  value.at("source", default: none) != none and (free or depth == none or depth > 0)
-}
-
-#let method(value, show-error: false, depth: none, frozen: false) = {
-  let _method-wrap(value, min-prec, show-error: false, depth: none, frozen: false) = {
-    let rendered = method(value, show-error: show-error, depth: depth, frozen: frozen)
-    let needs-parentheses = _expands(value, depth, frozen) and _method-prec(value) < min-prec
-    if needs-parentheses { $(#rendered)$ } else { rendered }
-  }
-  value = utility.normalise-quantity(value)
-
-  let is-boundary = value.at("boundary", default: false)
-  let free = frozen and not is-boundary
-  let expand = _expands(value, depth, frozen)
-
-  let child-depth = if depth == none {
-    none
-  } else if free {
-    depth
-  } else {
-    depth - 1
-  }
-  let child-frozen = frozen or is-boundary
-
-  if expand {
-    let operation = value.source.head
-    if operation == "add" {
-      $#value.source.data.map(x => _method-wrap(x, 1, show-error: show-error, depth: child-depth, frozen: child-frozen)).join($+$)$
-    } else if operation == "sub" {
-      let (a, terms) = value.source.data
-      let rest = terms
-        .map(t => $- #_method-wrap(t, 2, show-error: show-error, depth: child-depth, frozen: child-frozen)$)
-        .join()
-      $#_method-wrap(a, 1, show-error: show-error, depth: child-depth, frozen: child-frozen) #rest$
-    } else if operation == "neg" {
-      $- #_method-wrap(value.source.data, 2, show-error: show-error, depth: child-depth, frozen: child-frozen)$
-    } else if operation == "abs" {
-      $abs(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-    } else if operation == "mul" {
-      context {
-        let product = zero.impl.num-state.get().product
-        $#value.source.data.map(x => _method-wrap(x, 2.5, show-error: show-error, depth: child-depth, frozen: child-frozen)).join(product)$
-      }
-    } else if operation == "div" {
-      let values = value.source.data.map(x => method(
-        x,
-        show-error: show-error,
-        depth: child-depth,
-        frozen: child-frozen,
-      ))
-      $#values.at(0)/#values.at(1)$
-    } else if operation == "pow" {
-      let (base, exponent) = value.source.data
-      if utility.as-float(base) == calc.e {
-        $e^(#method(exponent, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-      } else {
-        $#_method-wrap(base, 3, show-error: show-error, depth: child-depth, frozen: child-frozen)^(#method(exponent, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-      }
-    } else if operation == "root" {
-      let (radicand, index) = value.source.data
-      if utility.as-float(index) == 2 {
-        $sqrt(#method(radicand, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-      } else {
-        $root(#method(index, show-error: show-error, depth: child-depth, frozen: child-frozen), #method(radicand, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-      }
-    } else if operation == "log" {
-      let (val, base) = value.source.data
-      if utility.as-float(base) == calc.e {
-        $ln(#method(val, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-      } else {
-        $log_(#method(base, show-error: show-error, depth: child-depth, frozen: child-frozen))(#method(val, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-      }
-    } else if operation == "sin" {
-      $sin(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-    } else if operation == "cos" {
-      $cos(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-    } else if operation == "tan" {
-      $tan(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-    } else if operation == "asin" {
-      $arcsin(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-    } else if operation == "acos" {
-      $arccos(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-    } else if operation == "atan" {
-      $arctan(#method(value.source.data, show-error: show-error, depth: child-depth, frozen: child-frozen))$
-    }
-  } else {
-    variable(value, show-error: show-error)
-  }
-}
-
-#let method-result(value, show-error: false, depth: none, ..args) = {
-  value = utility.normalise-quantity(value)
-  math.equation(
-    $
-      #method(value, show-error: show-error, depth: depth) = #variable(value, show-error: show-error)
-    $,
-    ..args,
+/// How the uncertainty of `value` was calculated (`show-result: true`: followed by `= uncertainty`, as an equation).
+/// - show-result: add `= uncertainty` and return an equation, which takes the remaining arguments of `math.equation`
+/// - equals: the symbol in front of the result
+/// - depth: how many operations are expanded (none: all)
+/// - frozen: expand everything below the first operation, whatever the depth
+/// - product: symbol between factors (auto: zero's `product`, none: juxtaposition)
+/// - show-units: show the units of the operands
+#let error-method(
+  value,
+  show-result: true,
+  equals: sym.eq,
+  depth: none,
+  frozen: false,
+  product: auto,
+  show-units: true,
+  ..args,
+) = {
+  value = utility.normalise-quantity(value, allow-special: true)
+  let calculation = ud.error-method-tree(
+    value,
+    (depth: depth, frozen: frozen, product: product, show-units: show-units, show-error: false),
   )
-}
-
-#let error(value) = {
-  value = utility.normalise-quantity(value)
-  let info = if value.info.pm == none or value.info.pm == () {
-    (
-      int: "0",
-      frac: "",
-      sign: "+",
-      pm: none,
-      e: none,
-    )
-  } else {
-    (
-      int: value.info.pm.at(0),
-      frac: value.info.pm.at(1),
-      sign: "+",
-      pm: none,
-      e: value.info.e,
-    )
+  if not show-result {
+    assert(args.named().len() == 0, message: "display.error-method: " + repr(args.named().keys()) + " only apply with show-result: true")
+    return calculation
   }
-  let round = value.at("round", default: none)
-  if round == none and value.at("args", default: none) != none {
-    round = value.args.named().at("round", default: none)
-  }
-  round = if (
-    round != none and round.at("uncertainty-precision", default: none) != none
-  ) {
-    let precision = round.uncertainty-precision
-    if type(precision) == dictionary { precision = precision.places }
-    (
-      precision: precision,
-      mode: round.mode,
-    )
-  }
-  display-info((info: info, unit: value.at("unit", default: none), round: round))
-}
-
-#let rss(errors) = {
-  context {
-    let product = zero.impl.num-state.get().product
-    $sqrt(#errors.map(t => $#if t.count != 1 { $#t.count product$ } (#t.error)^2$).join($+$))$
-  }
-}
-
-#let _deduplicate-errors(errors, consider-value: true) = {
-  let errors = errors.filter(x => (
-    not x.at("constant", default: false) and utility.as-uncertainty(x) not in (none, 0)
-  ))
-  let dedup-errors = errors.dedup(key: x => if consider-value {
-    (utility.as-uncertainty(x), utility.as-float(x))
-  } else { utility.as-uncertainty(x) })
-  dedup-errors = if dedup-errors.len() != errors.len() {
-    dedup-errors.map(x => (
-      count: errors.filter(y => utility.as-uncertainty(y) == utility.as-uncertainty(x)).len(),
-      error: x,
-    ))
-  } else {
-    dedup-errors.map(x => (count: 1, error: x))
-  }
-  dedup-errors
-}
-
-#let _has-error(x) = not x.at("constant", default: false) and utility.as-uncertainty(x) not in (none, 0)
-
-#let error-method(value, depth: none, frozen: false) = {
-  value = utility.normalise-quantity(value)
-
-  let is-boundary = value.at("boundary", default: false)
-  let free = frozen and not is-boundary
-  let expand = value.at("source", default: none) != none and (free or depth == none or depth > 0)
-
-  let child-depth = if depth == none {
-    none
-  } else if free {
-    depth
-  } else {
-    depth - 1
-  }
-  let child-frozen = frozen or is-boundary
-
-  if expand {
-    let operation = value.source.head
-    if operation == "add" or operation == "sub" {
-      let terms = if operation == "sub" { (value.source.data.first(),) + value.source.data.last() } else { value.source.data }
-      let errors = _deduplicate-errors(terms, consider-value: false)
-      if errors.len() == 0 { return $0$ }
-      rss(errors.map(x => (count: x.count, error: error-method(x.error, depth: child-depth, frozen: frozen))))
-    } else if operation == "abs" or operation == "neg" {
-      error-method(value.source.data, depth: child-depth, frozen: frozen)
-    } else if operation == "mul" or operation == "div" {
-      let errors = _deduplicate-errors(value.source.data)
-      if errors.len() == 0 { return $0$ }
-      context {
-        let product = zero.impl.num-state.get().product
-        $#variable(value, show-error: false) product #rss(errors.map(x => (count: x.count, error: $#error-method(x.error, depth: child-depth, frozen: frozen)/ #variable(x.error, show-error: false)$)))$
-      }
-    } else if operation == "pow" {
-      let (base, exponent) = value.source.data
-      let terms = ()
-      if _has-error(base) {
-        terms.push((
-          count: 1,
-          error: context {
-            let product = zero.impl.num-state.get().product
-            $#variable(exponent, show-error: false) product #variable(value, show-error: false) product #error-method(base, depth: child-depth, frozen: frozen)/#variable(base, show-error: false)$
-          },
-        ))
-      }
-      if _has-error(exponent) {
-        terms.push((
-          count: 1,
-          error: $#variable(value, show-error: false) dot ln(#variable(base, show-error: false)) dot #error-method(exponent, depth: child-depth, frozen: frozen)$,
-        ))
-      }
-      if terms.len() == 0 { return $0$ }
-      rss(terms)
-    } else if operation == "root" {
-      let (radicand, index) = value.source.data
-      let terms = ()
-      if _has-error(radicand) {
-        terms.push((
-          count: 1,
-          error: context {
-            let product = zero.impl.num-state.get().product
-            $#variable(value, show-error: false) product #error-method(radicand, depth: child-depth, frozen: frozen)/(#variable(index, show-error: false) product #variable(radicand, show-error: false))$
-          },
-        ))
-      }
-      if _has-error(index) {
-        terms.push((
-          count: 1,
-          error: $#variable(value, show-error: false) dot ln(#variable(radicand, show-error: false)) dot #error-method(index, depth: child-depth, frozen: frozen) / #variable(index, show-error: false)^2$,
-        ))
-      }
-      if terms.len() == 0 { return $0$ }
-      rss(terms)
-    } else if operation == "log" {
-      let (val, base) = value.source.data
-      let terms = ()
-      if _has-error(val) {
-        terms.push((
-          count: 1,
-          error: $#error-method(val, depth: child-depth, frozen: frozen) / (#variable(val, show-error: false) dot ln(#variable(base, show-error: false)))$,
-        ))
-      }
-      if _has-error(base) {
-        terms.push((
-          count: 1,
-          error: $#variable(value, show-error: false) dot #error-method(base, depth: child-depth, frozen: frozen) / (#variable(base, show-error: false) dot ln(#variable(base, show-error: false)))$,
-        ))
-      }
-      if terms.len() == 0 { return $0$ }
-      rss(terms)
-    } else if operation == "sin" {
-      if not _has-error(value.source.data) { return $0$ }
-      $abs(cos(#variable(value.source.data, show-error: false))) dot #error-method(value.source.data, depth: child-depth, frozen: frozen)$
-    } else if operation == "cos" {
-      if not _has-error(value.source.data) { return $0$ }
-      $abs(sin(#variable(value.source.data, show-error: false))) dot #error-method(value.source.data, depth: child-depth, frozen: frozen)$
-    } else if operation == "tan" {
-      if not _has-error(value.source.data) { return $0$ }
-      $#error-method(value.source.data, depth: child-depth, frozen: frozen) / cos^2(#variable(value.source.data, show-error: false))$
-    } else if operation == "asin" or operation == "acos" {
-      if not _has-error(value.source.data) { return $0$ }
-      $#error-method(value.source.data, depth: child-depth, frozen: frozen) / sqrt(1 - #variable(value.source.data, show-error: false)^2)$
-    } else if operation == "atan" {
-      if not _has-error(value.source.data) { return $0$ }
-      $#error-method(value.source.data, depth: child-depth, frozen: frozen) / (1 + #variable(value.source.data, show-error: false)^2)$
-    }
-  } else {
-    error(value)
-  }
-}
-
-#let error-method-result(value, depth: none, ..args) = {
-  value = utility.normalise-quantity(value)
-  math.equation(
-    $
-      #error-method(value, depth: depth) = #error(value)
-    $,
-    ..args,
-  )
+  math.equation($ #calculation #equals #ud.error(value) $, ..args)
 }

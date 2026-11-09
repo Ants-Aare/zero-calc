@@ -1,10 +1,10 @@
 #import "operations.typ"
 #import "utility.typ"
-#import "display.typ"
+#import "utility-display.typ"
 
 #let const(value) = {
   let result = utility.normalise-constant(value)
-  display.display-info(result)
+  utility-display.display-info(result)
 }
 
 #let pi = const(calc.pi)
@@ -17,7 +17,7 @@
   let datas = utility.normalise-quantities(summands.pos())
   if convert-si { datas = datas.map(operations.convert-units-to-si) }
   let result = operations.add(datas)
-  return display.display-info(utility.with-call-args(result, summands))
+  return utility-display.display-info(result, call-args: summands)
 }
 
 #let sub(minuend, convert-si: false, ..subtrahends) = {
@@ -25,7 +25,7 @@
   let datas = utility.normalise-quantities((minuend,) + subtrahends.pos())
   if convert-si { datas = datas.map(operations.convert-units-to-si) }
   let result = operations.sub(datas.first(), datas.slice(1))
-  return display.display-info(utility.with-call-args(result, subtrahends))
+  return utility-display.display-info(result, call-args: subtrahends)
 }
 
 #let abs(value, convert-si: false, ..args) = {
@@ -33,14 +33,14 @@
   let value = utility.normalise-quantity(value)
   if convert-si { value = operations.convert-units-to-si(value) }
   let result = operations.abs(value)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 #let neg(value, convert-si: false, ..args) = {
   if (value,).any(x => x == none) { return none }
   let value = utility.normalise-quantity(value)
   if convert-si { value = operations.convert-units-to-si(value) }
   let result = operations.neg(value)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let mul(convert-si: false, ..factors) = {
@@ -48,7 +48,7 @@
   let datas = utility.normalise-quantities(factors.pos())
   if convert-si { datas = datas.map(operations.convert-units-to-si) }
   let result = operations.mul(datas)
-  return display.display-info(utility.with-call-args(result, factors))
+  return utility-display.display-info(result, call-args: factors)
 }
 
 #let div(dividend, divisor, convert-si: false, ..args) = {
@@ -58,7 +58,7 @@
     (dividend, divisor) = (operations.convert-units-to-si(dividend), operations.convert-units-to-si(divisor))
   }
   let result = operations.div(dividend, divisor)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let pow(base, exponent, convert-si: false, ..args) = {
@@ -66,14 +66,14 @@
   let (base, exponent) = utility.normalise-quantities((base, exponent))
   if convert-si { base = operations.convert-units-to-si(base) }
   let result = operations.pow(base, exponent)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let exp(exponent, convert-si: false, ..args) = {
   if (exponent,).any(x => x == none) { return none }
   let exponent = utility.normalise-quantity(exponent)
   let result = operations.exp(exponent)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let root(radicand, index, convert-si: false, ..args) = {
@@ -83,7 +83,7 @@
     (radicand, index) = (operations.convert-units-to-si(radicand), operations.convert-units-to-si(index))
   }
   let result = operations.root(radicand, index)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let sqrt(radicand, convert-si: false, ..args) = {
@@ -91,66 +91,66 @@
   let radicand = utility.normalise-quantity(radicand)
   if convert-si { radicand = operations.convert-units-to-si(radicand) }
   let result = operations.sqrt(radicand)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let log(value, base, ..args) = {
   if (value, base).any(x => x == none) { return none }
   let (value, base) = utility.normalise-quantities((value, base))
   let result = operations.log(value, base)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let ln(value, ..args) = {
   if (value,).any(x => x == none) { return none }
   let value = utility.normalise-quantity(value)
   let result = operations.ln(value)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let sin(angle, ..args) = {
   if (angle,).any(x => x == none) { return none }
   let angle = utility.normalise-quantity(angle)
   let result = operations.sin(angle)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 #let cos(angle, ..args) = {
   if (angle,).any(x => x == none) { return none }
   let angle = utility.normalise-quantity(angle)
   let result = operations.cos(angle)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 #let tan(angle, ..args) = {
   if (angle,).any(x => x == none) { return none }
   let angle = utility.normalise-quantity(angle)
   let result = operations.tan(angle)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let asin(value, unit: sym.degree, ..args) = {
   if (value,).any(x => x == none) { return none }
   let value = utility.normalise-quantity(value)
   let result = operations.asin(value, unit: unit)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 #let acos(value, unit: sym.degree, ..args) = {
   if (value,).any(x => x == none) { return none }
   let value = utility.normalise-quantity(value)
   let result = operations.acos(value, unit: unit)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 #let atan(value, unit: sym.degree, ..args) = {
   if (value,).any(x => x == none) { return none }
   let value = utility.normalise-quantity(value)
   let result = operations.atan(value, unit: unit)
-  return display.display-info(utility.with-call-args(result, args))
+  return utility-display.display-info(result, call-args: args)
 }
 
 #let convert-units-to-si(quantity, save-operations: true) = {
   if (quantity,).any(x => x == none) { return none }
   let value = utility.normalise-quantity(quantity)
   value = operations.convert-units-to-si(value, save-operations: save-operations)
-  return display.display-info(value)
+  return utility-display.display-info(value)
 }
 
 #let set-preferred-units(rules) = context {
