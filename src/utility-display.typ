@@ -10,10 +10,6 @@
   method-prec-table.at(op.head, default: 1000)
 }
 
-// Picks which part of a value is shown by looking at zero's own rounding, so that the value alone,
-// the uncertainty alone and the full number always agree on the digits that are displayed:
-// the value follows the digits of its uncertainty, like zero shows `30+-0.3` as `30.0 ± 0.3`.
-// part: "both" | "value" | "error"
 #let select-part(value, part, state) = {
   if part == "both" or (part == "value" and value.info.at("pm", default: none) in (none, ())) { return value }
   let info = value.info
@@ -48,7 +44,6 @@
   } else {
     (int: pm.at(0), frac: pm.at(1), sign: "+", pm: none, e: info.at("e", default: none))
   }
-  // everything is rounded already
   value.round = (precision: none)
   let named = value.at("args", default: arguments()).named()
   let _ = named.remove("round", default: none)
@@ -56,7 +51,6 @@
   value
 }
 
-// the metadata of a partial display describes the number that is shown
 #let part-metadata(value, part) = {
   if part == "both" { return value }
   let info = value.info
@@ -68,7 +62,6 @@
     value
   } else {
     let pm = if pm in (none, ()) { ("0", "") } else if type(pm.first()) == array { pm.first() } else { pm }
-    // the uncertainty keeps the precision it is displayed with
     let round = utility.as-round(value)
     let precision = if round != none { round.at("uncertainty-precision", default: none) }
     (
@@ -89,11 +82,9 @@
 #let display-info(value, part: "both", call-args: none) = {
   if call-args != none { value = utility.with-call-args(value, call-args) }
   assert(part in ("both", "value", "error"), message: "display: part must be \"both\", \"value\" or \"error\".")
-  // nothing to show but the word, the metadata keeps the history of the calculation
   if utility.is-undefined(value) {
     return utility.create-result-metadata(value) + text("undefined")
   }
-  // value = utility.normalise-exponent(value)
   if not utility.is-finite(utility.as-float(value)) {
     value.round = none
     let named = value.at("args", default: arguments()).named()
@@ -168,14 +159,12 @@
   result
 }
 
-// Shows a single value. `show-error: false` shows the number without its uncertainty, rounded exactly like the full number.
 #let variable(value, show-error: true) = {
   value = utility.normalise-quantity(value, allow-special: true)
   let x = value.remove("source", default: none)
   display-info(value, part: if show-error { "both" } else { "value" })
 }
 
-// Shows the uncertainty of a value on its own, rounded exactly like it is in the full number.
 #let error(value) = {
   value = utility.normalise-quantity(value, allow-special: true)
   display-info(value, part: "error")
@@ -200,7 +189,6 @@
   )
 }
 
-// `auto` follows zero's product setting, `none` multiplies by juxtaposition
 #let product-symbol(o) = {
   let product = if o.product == auto { zero.impl.num-state.get().product } else { o.product }
   if product == none { h(0.15em) } else { product }
@@ -313,10 +301,8 @@
 
   if not expands(value, o.depth, o.frozen) { return error(if o.show-units { value } else { value + (unit: none) }) }
 
-  // the children follow the same frozen rules as in `method`
   let c = child(o, value)
   let e(x) = error-method-tree(x, c)
-  // a value without its uncertainty
   let v(x) = operand(x, o + (show-error: false))
   let rss(terms) = rss-of(terms, product: o.product)
 

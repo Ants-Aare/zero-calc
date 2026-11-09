@@ -1,17 +1,21 @@
 #import "@preview/zero:0.7.1"
 #import "units.typ"
 #import "utility.typ": (
-  as-float, as-round, as-uncertainty, create-info, get-e, get-places, get-sig-figs, merge-args, normalise-constant,
-  normalise-quantity, prefixes, rss,
+  as-float, as-round, as-uncertainty, create-add-result, create-info, flag-special, get-last-digits, get-sig-figs,
+  get-value-e, is-undefined, merge-args, normalise-constant, normalise-quantity, prefixes, result-e, rss,
+  undefined-result,
 )
 
 #let const = normalise-constant
+
+#let any-undefined(..terms) = terms.pos().flatten().any(is-undefined)
 #let pi = normalise-constant(calc.pi)
 #let e = normalise-constant(calc.e)
 #let tau = normalise-constant(calc.tau)
 #let inf = normalise-constant(calc.inf)
 
 #let add(terms) = {
+  if any-undefined(terms) { return undefined-result("add", terms) }
   let unit = terms.filter(x => x.at("unit", default: none) != none).first(default: (unit: none)).unit
   assert(
     terms.all(x => x.at("unit", default: none) == none or units.equal(x.at("unit", default: none), unit)),
@@ -19,20 +23,19 @@
   )
   let sum = terms.map(as-float).sum()
   let error = rss(terms.map(as-uncertainty))
-  let target-e = get-e(terms, sum, "highest")
-  return (
+  let digits = get-last-digits(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))))
+  let plain = terms.all(x => x.info.e in (none, "0"))
+  let shown = create-add-result(sum, error, digits, plain: plain)
+  return flag-special((
     float: sum,
     uncertainty: error,
-    info: create-info(sum, error, target-e),
-    round: get-places(
-      terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
-      target-e,
-    ),
+    info: shown.info,
+    round: shown.round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "add", data: terms),
     args: merge-args(terms, unit: unit),
-  )
+  ))
 }
 
 #let sub(a, terms) = {
@@ -48,6 +51,7 @@
 }
 
 #let neg(term) = {
+  if any-undefined(term) { return undefined-result("neg", term) }
   let original = term
   let value = as-float(term)
   let info = term.info
@@ -65,6 +69,7 @@
 }
 
 #let abs(term) = {
+  if any-undefined(term) { return undefined-result("abs", term) }
   let original = term
   let value = as-float(term)
   let info = term.info
@@ -82,6 +87,7 @@
 }
 
 #let mul(terms) = {
+  if any-undefined(terms) { return undefined-result("mul", terms) }
   let unit = units.multiply-unit(terms.map(x => x.at("unit", default: none)))
   let product = terms.map(as-float).product(default: 0)
   let error = if terms.any(x => as-uncertainty(x) != none) {
@@ -99,20 +105,22 @@
         }
       }))
   }
-  let target-e = get-e(terms, product, "value")
-  return (
+  let round = get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))))
+  return flag-special((
     float: product,
     uncertainty: error,
-    info: create-info(product, error, target-e),
-    round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    info: create-info(product, error, result-e(product, round: round)),
+    round: round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "mul", data: terms),
     args: merge-args(terms, unit: unit),
-  )
+  ))
 }
 
 #let div(dividend, divisor) = {
+  if any-undefined(dividend, divisor) { return undefined-result("div", (dividend, divisor)) }
+  if as-float(divisor) == 0 { return undefined-result("div", (dividend, divisor)) }
   let unit = units.multiply-unit((
     dividend.at("unit", default: none),
     units.invert-unit(divisor.at("unit", default: none)),
@@ -128,20 +136,21 @@
       if ub != none { ub * calc.abs(a) / (b * b) },
     ))
   }
-  let target-e = get-e(terms, quotient, "value")
-  return (
+  let round = get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))))
+  return flag-special((
     float: quotient,
     uncertainty: error,
-    info: create-info(quotient, error, target-e),
-    round: get-sig-figs(terms.filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    info: create-info(quotient, error, result-e(quotient, round: round)),
+    round: round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
     source: (head: "div", data: terms),
     args: merge-args(terms, unit: unit),
-  )
+  ))
 }
 
 #let pow(base, exponent) = {
+  if any-undefined(base, exponent) { return undefined-result("pow", (base, exponent)) }
   let exponent-uncertainty = as-uncertainty(exponent)
   assert(
     units.is-unitless(exponent),
@@ -155,6 +164,9 @@
   let exponent-float = as-float(exponent)
   let base-float = as-float(base)
   let base-uncertainty = as-uncertainty(base)
+
+  if base-float == 0 and exponent-float <= 0 { return undefined-result("pow", (base, exponent)) }
+  if base-float < 0 and int(exponent-float) != exponent-float { return undefined-result("pow", (base, exponent)) }
 
   let unit = units.pow-unit(base.at("unit", default: none), exponent-float)
   let result = calc.pow(base-float, exponent-float)
@@ -178,24 +190,25 @@
   if exponent.info.frac.len() == 0 and exponent.info.pm == none {
     exponent.constant = true
   }
-  let target-e = get-e(none, result, "value")
-  return (
+  let round = get-sig-figs(
+    (base, exponent).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
+  )
+  return flag-special((
     float: result,
     uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs(
-      (base, exponent).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
-    ),
+    info: create-info(result, error, result-e(result, round: round)),
+    round: round,
     unit: unit,
     constant: (base, exponent).all(x => x.at("constant", default: false)),
     source: (head: "pow", data: (base, exponent)),
     args: merge-args((base, exponent), unit: unit),
-  )
+  ))
 }
 
 #let exp(exponent) = pow(e, exponent)
 
 #let root(radicand, index) = {
+  if any-undefined(radicand, index) { return undefined-result("root", (radicand, index)) }
   let index-float = as-float(index)
   let index-uncertainty = as-uncertainty(index)
   let radicand-float = as-float(radicand)
@@ -205,6 +218,10 @@
     radicand.at("unit", default: none) == none or index-uncertainty == none,
     message: "root: index must be exact (no uncertainty) when radicand carries a unit.",
   )
+
+  if index-float == 0 or (radicand-float < 0 and calc.rem(index-float, 2) == 0) {
+    return undefined-result("root", (radicand, index))
+  }
 
   let unit = units.root-unit(radicand.at("unit", default: none), index-float)
   let result = calc.root(radicand-float, int(index-float))
@@ -222,24 +239,25 @@
   if index.info.pm == none {
     index.constant = true
   }
-  let target-e = get-e(none, result, "value")
-  return (
+  let round = get-sig-figs(
+    (radicand, index).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
+  )
+  return flag-special((
     float: result,
     uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs(
-      (radicand, index).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
-    ),
+    info: create-info(result, error, result-e(result, round: round)),
+    round: round,
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
     source: (head: "root", data: (radicand, index)),
     args: merge-args((radicand, index), unit: unit),
-  )
+  ))
 }
 
 #let sqrt(radicand) = root(radicand, normalise-constant(2))
 
 #let log(value, base) = {
+  if any-undefined(value, base) { return undefined-result("log", (value, base)) }
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
   let base-float = as-float(base)
@@ -247,8 +265,7 @@
 
   assert(units.is-unitless(value), message: "log: value must not carry a unit.")
   assert(units.is-unitless(base), message: "log: base must not carry a unit.")
-  assert(value-float > 0, message: "log: value must be positive.")
-  assert(base-float > 0 and base-float != 1, message: "log: base must be positive and != 1.")
+  if value-float <= 0 or base-float <= 0 or base-float == 1 { return undefined-result("log", (value, base)) }
 
   let result = calc.log(value-float, base: base-float)
   let ln-base = calc.ln(base-float)
@@ -262,19 +279,19 @@
     },
   )
   let error = if error-terms.any(x => x != none) { rss(error-terms) }
-  let target-e = get-e(none, result, "value")
+  let round = get-sig-figs(
+    (value, base).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
+  )
 
-  return (
+  return flag-special((
     float: result,
     uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs(
-      (value, base).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))),
-    ),
+    info: create-info(result, error, result-e(result, round: round)),
+    round: round,
     constant: (value, base).all(x => x.at("constant", default: false)),
     source: (head: "log", data: (value, base)),
     args: merge-args((value, base), unit: none),
-  )
+  ))
 }
 
 #let ln(value) = log(value, e)
@@ -308,54 +325,59 @@
   )
 }
 
-#let trig-result(name, result, error, angle, target-e) = (
-  float: result,
-  uncertainty: error,
-  info: create-info(result, error, target-e),
-  round: get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
-  constant: angle.at("constant", default: false),
-  source: (head: name, data: angle),
-  args: merge-args((angle,), unit: none),
-)
+#let trig-result(name, result, error, angle, fixed-e: none) = {
+  let round = get-sig-figs((angle,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))))
+  (
+    float: result,
+    uncertainty: error,
+    info: create-info(result, error, if fixed-e != none { fixed-e } else { result-e(result, round: round) }),
+    round: round,
+    constant: angle.at("constant", default: false),
+    source: (head: name, data: angle),
+    args: merge-args((angle,), unit: none),
+  )
+}
 
 #let snap-zero(result, angle) = if calc.abs(result) < 1e-15 and calc.abs(angle.rad()) > 1e-3 { 0.0 } else { result }
 
 #let sin(angle) = {
+  if any-undefined(angle) { return undefined-result("sin", angle) }
   let (value, uncertainty) = angle-parts(angle, "sin")
   let result = snap-zero(calc.sin(value), value)
   let error = if uncertainty != none { calc.abs(calc.cos(value)) * uncertainty }
-  trig-result("sin", result, error, angle, 0)
+  trig-result("sin", result, error, angle, fixed-e: 0)
 }
 
 #let cos(angle) = {
+  if any-undefined(angle) { return undefined-result("cos", angle) }
   let (value, uncertainty) = angle-parts(angle, "cos")
   let result = snap-zero(calc.cos(value), value)
   let error = if uncertainty != none { calc.abs(calc.sin(value)) * uncertainty }
-  trig-result("cos", result, error, angle, 0)
+  trig-result("cos", result, error, angle, fixed-e: 0)
 }
 
 #let tan(angle) = {
+  if any-undefined(angle) { return undefined-result("tan", angle) }
   let (value, uncertainty) = angle-parts(angle, "tan")
+  if calc.abs(calc.cos(value)) < 1e-15 { return undefined-result("tan", angle) }
   let result = snap-zero(calc.tan(value), value)
   let error = if uncertainty != none { uncertainty / calc.pow(calc.cos(value), 2) }
-  trig-result("tan", result, error, angle, get-e(none, result, "value"))
+  trig-result("tan", result, error, angle)
 }
 
 #let inverse-trig-result(name, function, derivative, value, unit) = {
   let value-float = as-float(value)
   let value-uncertainty = as-uncertainty(value)
   assert(units.is-unitless(value), message: name + ": value must not carry a unit.")
-  // unknown units fall back to degrees, like before
   let divider = angle-units.at(str(unit), default: 1deg)
   let result = function(value-float) / divider
-  // the uncertainty is propagated in radians and has to be expressed in the same unit as the result
   let error = if value-uncertainty != none { derivative(value-float) * value-uncertainty * 1rad / divider }
-  let target-e = get-e(none, result, "value")
+  let round = get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x))))
   (
     float: result,
     uncertainty: error,
-    info: create-info(result, error, target-e),
-    round: get-sig-figs((value,).filter(x => not x.at("constant", default: false)).map(x => (x.info, as-round(x)))),
+    info: create-info(result, error, result-e(result, round: round)),
+    round: round,
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
     source: (head: name, data: value),
@@ -364,20 +386,30 @@
 }
 
 #let asin(value, unit: sym.degree) = {
+  if any-undefined(value) { return undefined-result("asin", value) }
   let value-float = as-float(value)
   assert(units.is-unitless(value), message: "asin: value must not carry a unit.")
-  assert(value-float >= -1 and value-float <= 1, message: "asin: value must be in [-1, 1].")
+  let value-uncertainty = as-uncertainty(value)
+  if calc.abs(value-float) > 1 or (calc.abs(value-float) == 1 and value-uncertainty != none) {
+    return undefined-result("asin", value)
+  }
   inverse-trig-result("asin", calc.asin, x => 1 / calc.sqrt(1 - x * x), value, unit)
 }
 
 #let acos(value, unit: sym.degree) = {
+  if any-undefined(value) { return undefined-result("acos", value) }
   let value-float = as-float(value)
   assert(units.is-unitless(value), message: "acos: value must not carry a unit.")
-  assert(value-float >= -1 and value-float <= 1, message: "acos: value must be in [-1, 1].")
+  let value-uncertainty = as-uncertainty(value)
+  if calc.abs(value-float) > 1 or (calc.abs(value-float) == 1 and value-uncertainty != none) {
+    return undefined-result("acos", value)
+  }
   inverse-trig-result("acos", calc.acos, x => 1 / calc.sqrt(1 - x * x), value, unit)
 }
 
-#let atan(value, unit: sym.degree) = inverse-trig-result("atan", calc.atan, x => 1 / (1 + x * x), value, unit)
+#let atan(value, unit: sym.degree) = if any-undefined(value) { undefined-result("atan", value) } else {
+  inverse-trig-result("atan", calc.atan, x => 1 / (1 + x * x), value, unit)
+}
 
 #let apply-prefix(value, unit, in-numerator) = {
   let prefix = if type(unit.at(0)) != symbol and unit.at(0).len() != 1 { unit.at(0).first() }
@@ -403,7 +435,7 @@
       removal-unit = (numerator: removal-unit.denominator, denominator: removal-unit.numerator)
     }
     let sign = if in-numerator { 1 } else { -1 }
-    // grams are converted to kilograms directly: mg = 1e-6 kg
+    // stupid kilograms
     let correction = if unit-name == "g" { -3 } else { 0 }
     let exponent = (prefix-e + correction) * int(unit.at(1)) * sign
     let multiplier = const(
@@ -525,7 +557,7 @@
   }
 
   if not save-operations and result != quantity {
-    result.source = (head: "mul", data: (quantity,))
+    result.source = quantity.at("source", default: none)
   }
   return result
 }
@@ -546,7 +578,7 @@
     si,
     const((
       float: 1 / factor,
-      info: create-info(1 / factor, none, get-e(none, 1 / factor, "value")),
+      info: create-info(1 / factor, none, result-e(1 / factor)),
       unit: units.multiply-unit((unit, units.invert-unit(one-si.unit))),
       args: arguments(),
     )),
@@ -554,6 +586,7 @@
   let named = quantity.at("args", default: none)
   named = if named == none { (:) } else { named.named() }
   let _ = named.remove("alt", default: none)
+  let _ = named.remove("round", default: none)
   result.unit = unit
   result.args = arguments(..(named + args.named()))
   result.source = (head: "mul", data: (quantity,))

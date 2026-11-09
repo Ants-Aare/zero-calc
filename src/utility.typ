@@ -129,6 +129,7 @@
     info-to-uncertainty(value.info)
   }
 }
+
 #let as-round(value) = {
   let args = value.at("args", default: none)
   if args != none {
@@ -137,152 +138,7 @@
   return value.at("round", default: none)
 }
 
-#let array-as-floats(values) = values.map(as-float)
-#let array-as-uncertainties(values) = values.map(as-uncertainty)
-
-#let metadata-as-float(metadata) = {
-  let value = retrieve-metadata(metadata)
-  if value.at("float", default: none) != none {
-    value.float
-  } else if value.raw != none and (type(value.raw) == int or type(value.raw) == float) {
-    value.raw
-  } else {
-    info-to-float(value.info)
-  }
-}
-#let metadata-as-uncertainty(metadata) = {
-  let value = retrieve-metadata(metadata)
-  if value.at("uncertainty", default: none) != none {
-    value.uncertainty
-  } else {
-    info-to-uncertainty(value.info)
-  }
-}
-
-#let metadatas-as-floats(metadatas) = metadatas.map(retrieve-metadata).map(as-float)
-#let metadatas-as-uncertainties(metadatas) = metadatas.map(retrieve-metadata).map(as-uncertainty)
-
-#let get-places(infos, target-e) = {
-  if infos == () {
-    return none
-  }
-  let places = infos.map(x => {
-    let (info, round) = x
-    let e = if info.e == none { 0 } else { int(info.e) }
-    let value-frac = info.frac.len()
-    let uncertainty = if info.pm != none { info.pm.at(1).len() } else { 1000 }
-    if round != none {
-      if round.at("mode", default: none) == "figures" {
-        let intcount = info.int.trim("0", at: start).len()
-        value-frac = round.precision - intcount
-
-        if info.pm != none {
-          let error-intcount = info.pm.at(0).trim("0", at: start).len()
-          uncertainty = round.at("uncertainty-precision", default: round.precision)
-          if type(uncertainty) == dictionary {
-            uncertainty = uncertainty.places
-          }
-          uncertainty -= error-intcount
-        }
-      } else {
-        value-frac = round.at("precision", default: value-frac)
-        uncertainty = round.at("uncertainty-precision", default: uncertainty)
-        if type(uncertainty) == dictionary {
-          uncertainty = uncertainty.places
-        }
-      }
-    }
-    return (
-      (target-e - e) + value-frac,
-      (target-e - e),
-      (target-e - e) + uncertainty,
-    )
-  })
-
-  let value-min-frac = calc.min(..places.map(x => x.at(0)))
-  let value-max-int = calc.max(..places.map(x => x.at(1)))
-  let value-places = calc.max(value-min-frac, value-max-int)
-  let uncertainty-places = calc.min(..places.map(x => x.at(2)))
-  if uncertainty-places < 900 {
-    value-places = uncertainty-places
-  }
-  let round = (
-    precision: value-places,
-    mode: "places",
-    pad: true,
-  )
-  if uncertainty-places < 900 {
-    round += (uncertainty-precision: (places: uncertainty-places))
-  }
-  return round
-}
-
-#let get-sig-figs(infos) = {
-  if infos == () {
-    return none
-  }
-  let sig-figs = infos.map(x => {
-    let (info, round) = x
-    let digits = (info.int + info.frac).trim("0", at: start)
-    let value = if digits.len() == 0 { info.frac.len() + 1 } else { digits.len() }
-    let uncertainty = if info.pm != none { (info.pm.at(0) + info.pm.at(1)).trim("0", at: start).len() } else { int.max }
-    if round != none {
-      if round.at("mode", default: none) == "places" {
-        value = (info.int).trim("0", at: start).len() + round.precision
-        if info.pm != none {
-          let uncertainty-precision = round.at("uncertainty-precision", default: round.precision)
-          if type(uncertainty-precision) == dictionary { uncertainty-precision = uncertainty-precision.places }
-          uncertainty = (
-            info.pm.at(0) + info.pm.at(1).slice(0, count: uncertainty-precision)
-          )
-            .trim("0")
-            .len()
-        }
-      } else {
-        value = round.at("precision", default: value)
-        uncertainty = round.at("uncertainty-precision", default: uncertainty)
-      }
-    }
-    return (value, uncertainty)
-  })
-  let value-sig-figs = calc.min(..sig-figs.map(x => x.at(0)))
-  let uncertainty-sig-figs = calc.min(..sig-figs.map(x => x.at(1)))
-  let round = (
-    precision: value-sig-figs,
-    mode: "figures",
-    pad: true,
-  )
-  if uncertainty-sig-figs != int.max {
-    round += (uncertainty-precision: uncertainty-sig-figs)
-  }
-  return round
-}
-
-#let get-highest-e(terms) = calc.max(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
-#let get-lowest-e(terms) = calc.min(..terms.map(x => if x.info.e != none { int(x.info.e) } else { 0 }))
 #let is-finite(x) = type(x) != float or (x == x and calc.abs(x) != float.inf)
-#let get-value-e(value) = if value != 0 and is-finite(value) { calc.floor(calc.log(calc.abs(value), base: 10)) } else { 0 }
-
-#let get-e(terms, value, mode) = {
-  impl.rounding.assert-option(mode, "e mode", ("highest", "lowest", "value"))
-  let e = if mode == "value" {
-    let e = get-value-e(value)
-    if e == 1 {
-      e = 0
-    }
-    e
-  } else if mode == "highest" {
-    get-highest-e(terms)
-  } else if mode == "highest" {
-    get-lowest-e(terms)
-  }
-  return e
-}
-
-#let rss(terms) = {
-  terms = terms.filter(x => x != none)
-  if terms != () { calc.sqrt(terms.map(t => t * t).sum()) }
-}
 
 #let round-float-noise(x) = {
   if x == none or x == 0 or type(x) != float or not is-finite(x) { return x }
@@ -290,6 +146,105 @@
   if calc.abs(n) > 22 { return x }
   let scale = float("1e" + str(calc.abs(n)).replace("−", "-"))
   if n >= 0 { float(calc.round(x * scale)) / scale } else { float(calc.round(x / scale)) * scale }
+}
+
+#let round-option(round, key) = {
+  if round == none { return none }
+  let value = round.at(key, default: none)
+  if value == auto { none } else { value }
+}
+#let leading-zeros(digits) = digits.len() - digits.trim("0", at: start).len()
+#let int-e(info) = if info.e == none { 0 } else { int(info.e) }
+
+#let figures-to-places(int, frac, precision) = {
+  let digits = int + frac
+  if digits.trim("0") == "" { return 0 }
+  precision + leading-zeros(digits) - int.len()
+}
+
+#let places-to-figures(int, frac, places) = {
+  let digits = int + frac
+  let lead = leading-zeros(digits)
+  if lead == digits.len() { return calc.max(1, places + 1) }
+  calc.max(1, places + int.len() - lead)
+}
+
+#let operand-digits(info, round) = {
+  let mode = round-option(round, "mode")
+  if mode == none { mode = "places" }
+  let precision = round-option(round, "precision")
+  let (int, frac) = (info.int, info.frac)
+  let places = if precision == none { frac.len() } else if mode == "figures" {
+    figures-to-places(int, frac, precision)
+  } else { precision }
+  let figures = if precision != none and mode == "figures" { precision } else {
+    places-to-figures(int, frac, places)
+  }
+  let result = (e: int-e(info), places: places, figures: figures, u-places: none, u-figures: none)
+  let pm = info.at("pm", default: none)
+  if pm not in (none, ()) {
+    if type(pm.first()) == array { pm = pm.first() }
+    let (pint, pfrac) = pm
+    let spec = round-option(round, "uncertainty-precision")
+    let u-places = if spec == none { pfrac.len() } else if type(spec) == dictionary { spec.places } else {
+      figures-to-places(pint, pfrac, spec)
+    }
+    let u-figures = if type(spec) == int { spec } else { places-to-figures(pint, pfrac, u-places) }
+    result += (u-places: u-places, u-figures: u-figures)
+  }
+  result
+}
+#let get-last-digits(infos) = {
+  if infos == () { return none }
+  let digits = infos.map(((info, round)) => operand-digits(info, round))
+  let value = calc.min(calc.max(..digits.map(d => d.e - d.places)), calc.min(..digits.map(d => d.e)))
+  let with-error = digits.filter(d => d.u-places != none)
+  let uncertainty = if with-error.len() > 0 { calc.max(..with-error.map(d => d.e - d.u-places)) }
+  if uncertainty != none { value = uncertainty }
+  (value: value, uncertainty: uncertainty)
+}
+
+#let get-sig-figs(infos) = {
+  if infos == () { return none }
+  let digits = infos.map(((info, round)) => operand-digits(info, round))
+  let round = (precision: calc.min(..digits.map(d => d.figures)), mode: "figures", pad: true)
+  let uncertainties = digits.filter(d => d.u-figures != none).map(d => d.u-figures)
+  if uncertainties.len() > 0 { round += (uncertainty-precision: calc.min(..uncertainties)) }
+  round
+}
+#let round-significant(x, precision) = {
+  let places = precision - 1 - calc.floor(calc.log(x, base: 10))
+  if places > 300 { return x }
+  if places >= 0 { calc.round(x, digits: places) } else {
+    let scale = float("1e" + str(-places))
+    calc.round(x / scale) * scale
+  }
+}
+
+#let round-at(x, lsd) = {
+  if x == 0 or not is-finite(x) { return x }
+  if lsd <= 0 { calc.round(x, digits: calc.min(-lsd, 300)) } else {
+    let scale = float("1e" + str(lsd))
+    calc.round(x / scale) * scale
+  }
+}
+
+#let get-value-e(value, round: none) = {
+  if value == 0 or not is-finite(value) { return 0 }
+  let x = calc.abs(round-float-noise(value))
+  let precision = round-option(round, "precision")
+  if precision != none and round-option(round, "mode") == "figures" { x = round-significant(x, precision) }
+  calc.floor(calc.log(x, base: 10))
+}
+
+#let result-e(value, round: none) = {
+  let e = get-value-e(value, round: round)
+  if e == 1 { 0 } else { e }
+}
+
+#let rss(terms) = {
+  terms = terms.filter(x => x != none)
+  if terms != () { calc.sqrt(terms.map(t => t * t).sum()) }
 }
 
 #let create-info(value, uncertainty, e) = {
@@ -314,12 +269,68 @@
   )
 }
 
-#let num-metadata(info, raw, args) = (
+#let uncertainty-precision-of(uncertainty, digits, e) = {
+  let last = if digits.uncertainty != none { digits.uncertainty } else { digits.value }
+  let figures = if uncertainty == 0 { 0 } else { get-value-e(uncertainty) - last + 1 }
+  (uncertainty-precision: if figures >= 1 { figures } else { (places: calc.max(0, e - last)) })
+}
+#let create-add-result(value, uncertainty, digits, plain: true) = {
+  if digits == none {
+    return (info: create-info(value, uncertainty, if plain { 0 } else { result-e(value) }), round: none)
+  }
+  let last = digits.value
+  let rounded = round-at(value, last)
+  let e = if plain { 0 } else { result-e(rounded) }
+
+  if rounded == 0 {
+    let info = create-info(0.0, uncertainty, e)
+    if uncertainty == none {
+      return (info: info + (frac: "0" * calc.max(0, -last)), round: none)
+    }
+    return (
+      info: info,
+      round: (mode: "figures", pad: true, precision: calc.max(1, 1 - last))
+        + uncertainty-precision-of(uncertainty, digits, e),
+    )
+  }
+
+  let shown = if get-value-e(rounded) != get-value-e(value) { rounded } else { value }
+  let round = (
+    mode: "figures",
+    pad: true,
+    precision: calc.max(1, get-value-e(shown) - last + 1),
+  )
+  if uncertainty != none { round += uncertainty-precision-of(uncertainty, digits, e) }
+  (info: create-info(shown, uncertainty, e), round: round)
+}
+
+#let flag-special(result) = {
+  let x = result.at("float", default: none)
+  if type(x) != float { return result }
+  if x != x { result.undefined = true } else if calc.abs(x) == float.inf { result.infinite = true }
+  result
+}
+#let is-undefined(x) = type(x) == dictionary and x.at("undefined", default: false)
+#let is-infinite(x) = type(x) == dictionary and x.at("infinite", default: false)
+
+#let undefined-result(head, data) = (
+  float: float.nan,
+  uncertainty: none,
+  info: (int: "", frac: "", sign: "+", pm: none, e: none),
+  round: none,
+  unit: none,
+  constant: false,
+  source: (head: head, data: data),
+  args: arguments(),
+  undefined: true,
+)
+
+#let num-metadata(info, raw, args) = flag-special((
   float: if type(raw) != float and type(raw) != int { impl.utility.info-to-float(info) } else { raw },
   uncertainty: impl.utility.info-to-uncertainty(info),
   info: info,
   args: args,
-)
+))
 
 #let merge-args(terms, unit: none) = {
   let named = (:)
@@ -327,6 +338,7 @@
     let args = term.at("args", default: none)
     if args == none { continue }
     let operand-named = args.named()
+    let _ = operand-named.remove("round", default: none)
     if not units.equal(term.at("unit", default: none), unit) {
       let _ = operand-named.remove("alt", default: none)
     }
@@ -334,11 +346,21 @@
   }
   arguments(..named)
 }
+
 #let with-call-args(result, call) = {
   let inherited = result.at("args", default: none)
   let named = if inherited == none { (:) } else { inherited.named() }
   result.args = arguments(..(named + call.named()))
   result
+}
+
+#let assert-usable(data) = {
+  assert(
+    not is-undefined(data),
+    message: "zcalc: an operand is undefined (e.g. a division by zero), it cannot be used in another calculation.",
+  )
+  assert(not is-infinite(data), message: "zcalc: an operand is infinite, it cannot be used in another calculation.")
+  data
 }
 
 #let create-result-metadata(value) = [#metadata(value)<calc-result>]
@@ -349,72 +371,25 @@
 
 #let zcalc-state = state("zcalc-state", default-state)
 
-#let normalise-quantity(candidate) = {
-  let metadata = impl.utility.retrieve-metadata(candidate)
-  if metadata != none {
-    return metadata
-  } else {
-    let t = type(candidate)
+#let normalise-quantity(candidate, allow-special: false) = {
+  let t = type(candidate)
+  let data = impl.utility.retrieve-metadata(candidate)
+  if data == none {
     if t == dictionary {
-      return candidate
+      data = candidate
     } else if (t == int or t == float or t == str or t == content) {
-      return num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
+      data = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
     }
   }
+  if data != none and not allow-special { assert-usable(data) }
+  data
 }
 
 #let normalise-constant(candidate) = {
-  let metadata = impl.utility.retrieve-metadata(candidate)
-  if metadata != none {
-    metadata.constant = true
-    return metadata
-  } else {
-    let t = type(candidate)
-    if t == dictionary {
-      candidate.constant = true
-      return candidate
-    } else if (t == int or t == float or t == str or t == content) {
-      candidate = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
-      candidate.constant = true
-      return candidate
-    }
-  }
+  let data = normalise-quantity(candidate, allow-special: true)
+  assert(not is-undefined(data), message: "zcalc: a constant cannot be undefined.")
+  data.constant = true
+  data
 }
 
-#let normalise-quantities(quantities) = {
-  let datas = ()
-  for candidate in quantities {
-    let metadata = impl.utility.retrieve-metadata(candidate)
-    if metadata != none {
-      datas.push(metadata)
-    } else {
-      let t = type(candidate)
-      if t == dictionary {
-        datas.push(candidate)
-      } else if (t == int or t == float or t == str or t == content) {
-        let data = num-metadata(impl.parsing.parse-numeral(candidate), candidate, arguments())
-        datas.push(data)
-      }
-    }
-  }
-  return (datas)
-}
-#let round-significant(mantissa, precision) = {
-  let places = precision - 1 - calc.floor(calc.log(mantissa, base: 10))
-  let scale = float("1e" + str(calc.abs(places)).replace("−", "-"))
-  if places >= 0 { calc.round(mantissa * scale) / scale } else { calc.round(mantissa / scale) * scale }
-}
-#let normalise-exponent(value) = {
-  let round = as-round(value)
-  let info = value.at("info", default: none)
-  if round == none or info == none or round.at("mode", default: none) != "figures" { return value }
-  let x = as-float(value)
-  if x == 0 or not is-finite(x) { return value }
-  let e = if info.e == none { 0 } else { int(info.e) }
-  let mantissa = calc.abs(x) / calc.pow(10.0, e)
-  let rounded = round-significant(mantissa, round.precision)
-  let limit = if e == 0 { 100 } else { 10 }
-  if rounded < limit { return value }
-  value.info = create-info(x, as-uncertainty(value), if e == 0 { 2 } else { e + 1 })
-  value
-}
+#let normalise-quantities(quantities) = quantities.map(candidate => normalise-quantity(candidate))

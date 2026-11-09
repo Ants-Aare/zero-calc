@@ -167,7 +167,7 @@
         unit
       }
     } else if type(unit) == content {
-      let metadata = utility.impl.utility.retrieve-metadata(unit) //.at("unit", default: none)
+      let metadata = utility.impl.utility.retrieve-metadata(unit)
       (unit: metadata.unit, alt: metadata.args.named().at("alt", default: auto))
     }
   }
@@ -184,10 +184,45 @@
 
   utility.zcalc-state.update(state)
 }
+
 #let convert-units(value, unit, ..args) = {
   if value == none { return none }
   let value = utility.normalise-quantity(value)
   let target = utility.normalise-quantity(if type(unit) == function { unit() } else { unit })
   let result = operations.convert-units(value, target.unit, args: arguments(..(target.args.named() + args.named())))
-  return display.display-info(result)
+  return utility-display.display-info(result)
+}
+
+#let to-float(value, unit: none) = {
+  if type(value) == array { return value.map(x => to-float(x, unit: unit)) }
+  if value == none { return none }
+
+  let t = type(value)
+  if t == content {
+    value = utility.retrieve-metadata(value)
+    if unit != none {
+      let target = utility.normalise-quantity(if type(unit) == function { unit() } else { unit })
+      value = operations.convert-units(value, target.unit)
+    }
+    return utility.as-float(value)
+  } else if t in (int, float, str) {
+    return float(value)
+  }
+}
+
+#let to-uncertainty(value, unit: none) = {
+  if type(value) == array { return value.map(x => to-uncertainty(x, unit: unit)) }
+  if value == none { return none }
+
+  let t = type(value)
+  if t == content {
+    value = utility.retrieve-metadata(value)
+    if unit != none {
+      let target = utility.normalise-quantity(if type(unit) == function { unit() } else { unit })
+      value = operations.convert-units(value, target.unit)
+    }
+    return utility.as-uncertainty(value)
+  } else if t in (int, float, str) {
+    return utility.as-uncertainty(utility.normalise-quantity(value))
+  }
 }

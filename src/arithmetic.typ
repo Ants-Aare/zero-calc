@@ -1,6 +1,6 @@
 #import "@preview/parsely:0.1.1"
 #import "utility.typ"
-#import "display.typ"
+#import "utility-display.typ"
 #import "operations.typ"
 
 #let grammar = (
@@ -167,7 +167,7 @@
     post: it => apply-operations(it, variables),
   )
   result.boundary = true
-  display.display-info(result)
+  utility-display.display-info(result)
 }
 
 #let calculate-symbolica(tree, ..values) = {

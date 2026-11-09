@@ -109,7 +109,6 @@
     if matched-unit == none {
       return false
     }
-    // if they have the same sign and larger exponent
     if matched-unit * rule-exponent > 0 and calc.abs(matched-unit) >= calc.abs(rule-exponent) {
       continue
     } else {
