@@ -37,7 +37,7 @@
   // 16: equation arguments of method-result
   math.equation($ #num("1.5") + #num("2.25") = #num("3.8") $, numbering: "(1)"),
   // 17: depth with options
-  $#num("6.0") dot #num("4.0")$,
+  $#num("5.0") dot #num("4.0")$,
   // 18: error-method product symbol
   $#num("6.0") dot sqrt((#num("0.1")/#num("2.0"))^2 + (#num("0.1")/#num("3.0"))^2)$,
   // 19: error-method without product symbol

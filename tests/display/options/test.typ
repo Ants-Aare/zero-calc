@@ -40,7 +40,7 @@
   // 16: equation arguments of method-result
   display.method(zcalc.add("1.5", "2.25"), numbering: "(1)"),
   // 17: depth with options
-  method(zcalc.mul(zcalc.mul("2.0", "3.0"), "4.0"), depth: 1, product: sym.dot),
+  method(zcalc.mul(zcalc.add("2.0", "3.0"), "4.0"), depth: 1, product: sym.dot),
   // 18: error-method product symbol
   error-method(zcalc.mul("2.0+-0.1", "3.0+-0.1"), product: sym.dot),
   // 19: error-method without product symbol
