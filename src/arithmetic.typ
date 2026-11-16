@@ -17,8 +17,8 @@
 
   group: (match: $(parsely.slot("expr*"))$),
   frac: (match: math.frac),
-  abs: (match: $abs(parsely.slot("value"))$),
-  abs-bars: (match: $|parsely.slot("value")|$),
+  abs: (match: $abs(parsely.slot("value*"))$),
+  abs-bars: (match: $|parsely.slot("value*")|$),
 
   pow: (
     match: math.attach,
@@ -35,14 +35,15 @@
 
   ln: (prefix: $ln$, prec: 10),
   log: (prefix: $log_parsely.slot("base")$, prec: 10),
-  log10: (prefix: $log$, prec: 0),
+  log10: (prefix: $log$, prec: 10),
+  exp: (prefix: $exp$, prec: 10),
 
-  sin: (prefix: $sin$),
-  cos: (prefix: $cos$),
-  tan: (prefix: $tan$),
-  arcsin: (prefix: $arcsin$),
-  arccos: (prefix: $arccos$),
-  arctan: (prefix: $arctan$),
+  sin: (prefix: $sin$, prec: 10),
+  cos: (prefix: $cos$, prec: 10),
+  tan: (prefix: $tan$, prec: 10),
+  arcsin: (prefix: $arcsin$, prec: 10),
+  arccos: (prefix: $arccos$, prec: 10),
+  arctan: (prefix: $arctan$, prec: 10),
   call: (match: $parsely.slot("fn") parsely.tight (parsely.slot("args*"))$),
 
   delta: (prefix: $delta$, prec: 3),

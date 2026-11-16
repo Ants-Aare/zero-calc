@@ -33,7 +33,7 @@
     round: shown.round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: make-source("add", terms),
+    source: make-source("add", terms, flatten: true),
     args: merge-args(terms, unit: unit),
   ))
 }
@@ -113,7 +113,7 @@
     round: round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: make-source("mul", terms),
+    source: make-source("mul", terms, flatten: true),
     args: merge-args(terms, unit: unit),
   ))
 }

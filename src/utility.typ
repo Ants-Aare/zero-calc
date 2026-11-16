@@ -82,13 +82,11 @@
   } else if type(content) == str {
     content
   } else if content.has("text") {
-    let alternative-name = symbol-names.at(content.text, default: none)
-    if alternative-name != none {
-      alternative-name
-    } else if (type(content.text) == str) {
-      content.text
-    } else {
+    // operators like `exp` or `max` (math.op) hold content, not a string
+    if type(content.text) != str {
       to-str(content.text)
+    } else {
+      symbol-names.at(content.text, default: content.text)
     }
   } else if content.func() == math.attach {
     (
@@ -313,7 +311,18 @@
 #let is-undefined(x) = type(x) == dictionary and x.at("undefined", default: false)
 #let is-infinite(x) = type(x) == dictionary and x.at("infinite", default: false)
 
-#let make-source(head, data) = (head: head, data: metadata(data))
+#let make-source(head, data, flatten: false) = {
+  let mergeable(x) = {
+    let source = x.at("source", default: none)
+    source != none and source.head == head and not x.at("boundary", default: false)
+  }
+  if flatten and data.any(mergeable) {
+    data = data.map(x => if mergeable(x) { source-data(x.source) } else { (x,) }).flatten()
+  }
+  (head: head, data: metadata(data))
+}
+
+// the result of an operation that has no value, the operands are kept for `display.method`
 #let undefined-result(head, data) = (
   float: float.nan,
   uncertainty: none,
