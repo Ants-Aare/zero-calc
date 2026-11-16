@@ -2,7 +2,7 @@
 #import "units.typ"
 #import "utility.typ": (
   as-float, as-round, as-uncertainty, create-add-result, create-info, flag-special, get-last-digits, get-sig-figs,
-  get-value-e, is-undefined, merge-args, normalise-constant, normalise-quantity, prefixes, result-e, rss,
+  get-value-e, is-undefined, make-source, merge-args, normalise-constant, normalise-quantity, prefixes, result-e, rss,
   undefined-result,
 )
 
@@ -33,7 +33,7 @@
     round: shown.round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: (head: "add", data: terms),
+    source: make-source("add", terms),
     args: merge-args(terms, unit: unit),
   ))
 }
@@ -46,7 +46,7 @@
     x
   })
   let result = add((a,) + negative-terms)
-  result.source = (head: "sub", data: (a, terms))
+  result.source = make-source("sub", (a, terms))
   return result
 }
 
@@ -63,7 +63,7 @@
     round: as-round(term),
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
-    source: (head: "neg", data: original),
+    source: make-source("neg", original),
     args: term.at("args", default: none),
   )
 }
@@ -81,7 +81,7 @@
     round: as-round(term),
     unit: term.at("unit", default: none),
     constant: term.at("constant", default: false),
-    source: (head: "abs", data: original),
+    source: make-source("abs", original),
     args: term.at("args", default: none),
   )
 }
@@ -113,7 +113,7 @@
     round: round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: (head: "mul", data: terms),
+    source: make-source("mul", terms),
     args: merge-args(terms, unit: unit),
   ))
 }
@@ -144,7 +144,7 @@
     round: round,
     unit: unit,
     constant: terms.all(x => x.at("constant", default: false)),
-    source: (head: "div", data: terms),
+    source: make-source("div", terms),
     args: merge-args(terms, unit: unit),
   ))
 }
@@ -152,10 +152,10 @@
 #let pow(base, exponent) = {
   if any-undefined(base, exponent) { return undefined-result("pow", (base, exponent)) }
   let exponent-uncertainty = as-uncertainty(exponent)
-  assert(
-    units.is-unitless(exponent),
-    message: "pow: exponent must not carry a unit: " + repr(exponent.at("unit", default: none)),
-  )
+  // (messages that are built with repr/+ are only built when they are needed: assert would build them on every call)
+  if not units.is-unitless(exponent) {
+    panic("pow: exponent must not carry a unit: " + repr(exponent.at("unit", default: none)))
+  }
   assert(
     units.is-unitless(base) or exponent-uncertainty == none,
     message: "pow: exponent must be exact (no uncertainty) when base carries a unit.",
@@ -200,7 +200,7 @@
     round: round,
     unit: unit,
     constant: (base, exponent).all(x => x.at("constant", default: false)),
-    source: (head: "pow", data: (base, exponent)),
+    source: make-source("pow", (base, exponent)),
     args: merge-args((base, exponent), unit: unit),
   ))
 }
@@ -213,7 +213,7 @@
   let index-uncertainty = as-uncertainty(index)
   let radicand-float = as-float(radicand)
   let radicand-uncertainty = as-uncertainty(radicand)
-  assert(int(index-float) == index-float, message: "only integer index is allowed. index: " + str(index-float))
+  if int(index-float) != index-float { panic("only integer index is allowed. index: " + str(index-float)) }
   assert(
     radicand.at("unit", default: none) == none or index-uncertainty == none,
     message: "root: index must be exact (no uncertainty) when radicand carries a unit.",
@@ -249,7 +249,7 @@
     round: round,
     unit: unit,
     constant: (radicand, index).all(x => x.at("constant", default: false)),
-    source: (head: "root", data: (radicand, index)),
+    source: make-source("root", (radicand, index)),
     args: merge-args((radicand, index), unit: unit),
   ))
 }
@@ -289,7 +289,7 @@
     info: create-info(result, error, result-e(result, round: round)),
     round: round,
     constant: (value, base).all(x => x.at("constant", default: false)),
-    source: (head: "log", data: (value, base)),
+    source: make-source("log", (value, base)),
     args: merge-args((value, base), unit: none),
   ))
 }
@@ -307,17 +307,18 @@
   if unit == none and angle.unit.denominator.len() == 0 and angle.unit.numerator.len() == 1 {
     unit = str(angle.unit.numerator.at(0).at(0))
   }
-  assert(
-    unit in angle-units,
-    message: name
-      + ": angle must not carry a unit other than rad, "
-      + sym.degree
-      + ", "
-      + sym.prime
-      + " or "
-      + sym.prime.double
-      + " (radians assumed without unit).",
-  )
+  if unit not in angle-units {
+    panic(
+      name
+        + ": angle must not carry a unit other than rad, "
+        + sym.degree
+        + ", "
+        + sym.prime
+        + " or "
+        + sym.prime.double
+        + " (radians assumed without unit).",
+    )
+  }
   let uncertainty = as-uncertainty(angle)
   (
     value: as-float(angle) * angle-units.at(unit),
@@ -333,7 +334,7 @@
     info: create-info(result, error, if fixed-e != none { fixed-e } else { result-e(result, round: round) }),
     round: round,
     constant: angle.at("constant", default: false),
-    source: (head: name, data: angle),
+    source: make-source(name, angle),
     args: merge-args((angle,), unit: none),
   )
 }
@@ -380,7 +381,7 @@
     round: round,
     unit: (numerator: ((unit, "1"),), denominator: ()),
     constant: value.at("constant", default: false),
-    source: (head: name, data: value),
+    source: make-source(name, value),
     args: value.at("args", default: none),
   )
 }
@@ -569,10 +570,9 @@
     message: "convert-units: units with an offset (°C) are not supported as target",
   )
   let si = convert-units-to-si(quantity)
-  assert(
-    units.equal(si.at("unit", default: none), one-si.at("unit", default: none)),
-    message: "convert-units: cannot convert " + repr(quantity.at("unit", default: none)) + " into " + repr(unit),
-  )
+  if not units.equal(si.at("unit", default: none), one-si.at("unit", default: none)) {
+    panic("convert-units: cannot convert " + repr(quantity.at("unit", default: none)) + " into " + repr(unit))
+  }
   let factor = as-float(one-si)
   let result = mul((
     si,
@@ -589,6 +589,6 @@
   let _ = named.remove("round", default: none)
   result.unit = unit
   result.args = arguments(..(named + args.named()))
-  result.source = (head: "mul", data: (quantity,))
+  result.source = make-source("mul", (quantity,))
   return result
 }

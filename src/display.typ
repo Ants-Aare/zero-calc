@@ -35,7 +35,7 @@
   value = utility.normalise-quantity(value, allow-special: true)
   let calculation = ud.method-tree(value, ud.method-options(show-error, depth, frozen, product, fraction, show-units, exponential))
   if not show-result {
-    assert(args.named().len() == 0, message: "display.method: " + repr(args.named().keys()) + " only apply with show-result: true")
+    if args.named().len() != 0 { panic("display.method: " + repr(args.named().keys()) + " only apply with show-result: true") }
     return calculation
   }
   math.equation($ #calculation #equals #ud.variable(value, show-error: show-error) $, ..args)
@@ -64,7 +64,7 @@
     (depth: depth, frozen: frozen, product: product, show-units: show-units, show-error: false),
   )
   if not show-result {
-    assert(args.named().len() == 0, message: "display.error-method: " + repr(args.named().keys()) + " only apply with show-result: true")
+    if args.named().len() != 0 { panic("display.error-method: " + repr(args.named().keys()) + " only apply with show-result: true") }
     return calculation
   }
   math.equation($ #calculation #equals #ud.error(value) $, ..args)

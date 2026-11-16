@@ -313,6 +313,7 @@
 #let is-undefined(x) = type(x) == dictionary and x.at("undefined", default: false)
 #let is-infinite(x) = type(x) == dictionary and x.at("infinite", default: false)
 
+#let make-source(head, data) = (head: head, data: metadata(data))
 #let undefined-result(head, data) = (
   float: float.nan,
   uncertainty: none,
@@ -320,7 +321,7 @@
   round: none,
   unit: none,
   constant: false,
-  source: (head: head, data: data),
+  source: make-source(head, data),
   args: arguments(),
   undefined: true,
 )

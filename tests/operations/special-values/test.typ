@@ -29,7 +29,7 @@
   // 8: the history of an undefined result is kept
   [#repr(data(zcalc.div("1", "0")).source.head)],
   // 9: the operands as well
-  [#data(zcalc.div("1", "0")).source.data.map(x => x.info.int).join(",")],
+  [#data(zcalc.div("1", "0")).source.data.value.map(x => x.info.int).join(",")],
   // 10: the calculation of an undefined result can be shown
   method(zcalc.div("1", "0")),
   // 11: with its result
