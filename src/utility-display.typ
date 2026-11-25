@@ -222,7 +222,7 @@
     if expands(x, c.depth, c.frozen) and method-prec(x) < min-prec { $(#rendered)$ } else { rendered }
   }
 
-  let (operation, data) = (value.source.head, value.source.data)
+  let (operation, data) = (value.source.head, utility.source-data(value.source))
   if operation == "add" {
     $#data.map(x => wrap(x, 1)).join($+$)$
   } else if operation == "sub" {
@@ -306,7 +306,7 @@
   let v(x) = operand(x, o + (show-error: false))
   let rss(terms) = rss-of(terms, product: o.product)
 
-  let (operation, data) = (value.source.head, value.source.data)
+  let (operation, data) = (value.source.head, utility.source-data(value.source))
   if operation == "add" or operation == "sub" {
     let terms = if operation == "sub" { (data.first(),) + data.last() } else { data }
     let errors = deduplicate-errors(terms, consider-value: false)

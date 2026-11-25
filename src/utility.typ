@@ -311,6 +311,14 @@
 #let is-undefined(x) = type(x) == dictionary and x.at("undefined", default: false)
 #let is-infinite(x) = type(x) == dictionary and x.at("infinite", default: false)
 
+#let source-data(source) = source.data.value
+
+// The history of a result: the operation and its operands.
+// The operands are wrapped in a content element. Typst walks plain nested values again and again (whenever a function is
+// called with them), which makes long chains of calculations quadratic, but it hashes content only once.
+//
+// `flatten` (for associative operations): an operand that is itself the same operation is replaced by its operands,
+// so `(a + b) + c` is the history `add(a, b, c)`. Operands that are boundaries (variables of an equation) stay as they are.
 #let make-source(head, data, flatten: false) = {
   let mergeable(x) = {
     let source = x.at("source", default: none)
